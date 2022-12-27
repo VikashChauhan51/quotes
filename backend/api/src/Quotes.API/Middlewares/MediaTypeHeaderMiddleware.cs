@@ -5,15 +5,14 @@ using System.Net;
 
 namespace Quotes.API.Middlewares;
 
-public class MediaTypeMiddleware : IMiddleware
+public class MediaTypeHeaderMiddleware : IMiddleware
 {
     private readonly string[] methods = new string[] { HttpMethods.Post, HttpMethods.Put, HttpMethods.Patch };
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         var requestMethod = context.Request.Method.ToUpper();
 
-        if (methods.Contains(requestMethod) &&
-            !string.Equals(MediaTypeHeaderValue.Parse(context.Request.ContentType).MediaType.Value, HeaderKeys.Json, StringComparison.OrdinalIgnoreCase))
+        if (methods.Contains(requestMethod) && !context.IsJsonContentType())
         {
             context.Response.StatusCode = (int)HttpStatusCode.UnsupportedMediaType;
         }

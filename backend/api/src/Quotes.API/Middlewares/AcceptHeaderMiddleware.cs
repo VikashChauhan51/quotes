@@ -3,14 +3,11 @@ using System.Net;
 
 namespace Quotes.API.Middlewares;
 
-public class HeaderMiddleware : IMiddleware
+public class AcceptHeaderMiddleware : IMiddleware
 {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        context.Request.Headers.TryGetValue("Accept", out var accept);
-        
-
-        if (accept.Contains(HeaderKeys.Json) || accept.Contains(HeaderKeys.HalJson))
+        if (context.IsJsonAcceptType() || context.IsJsonHalAcceptType())
         {
             await next(context);
         }

@@ -6,3 +6,6 @@ global using Quotes.API.Entities;
 global using Quotes.API.Repositories;
 global using Quotes.API.Middlewares;
 global using Quotes.API.Validators;
+global using FluentValidation;
+global using FluentValidation.AspNetCore;
+global using ILogger = Serilog.ILogger;

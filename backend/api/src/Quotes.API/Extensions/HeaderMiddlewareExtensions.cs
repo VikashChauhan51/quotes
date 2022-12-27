@@ -1,25 +1,25 @@
 ﻿namespace Quotes.API.Extensions;
 
-public static class HeaderExtensions
+public static class HeaderMiddlewareExtensions
 {
     public static IServiceCollection AddAcceptHeader(this IServiceCollection services)
     {
-        services.AddTransient<HeaderMiddleware>();
+        services.AddTransient<AcceptHeaderMiddleware>();
         return services;
     }
     public static IServiceCollection AddMediaTypeHeader(this IServiceCollection services)
     {
-        services.AddTransient<MediaTypeMiddleware>();
+        services.AddTransient<MediaTypeHeaderMiddleware>();
         return services;
     }
     public static IApplicationBuilder UseAcceptHeader(this IApplicationBuilder app)
     {
-        app.UseMiddleware<HeaderMiddleware>();
+        app.UseMiddleware<AcceptHeaderMiddleware>();
         return app;
     }
     public static IApplicationBuilder UseMediaTypeHeader(this IApplicationBuilder app)
     {
-        app.UseMiddleware<MediaTypeMiddleware>();
+        app.UseMiddleware<MediaTypeHeaderMiddleware>();
         return app;
     }
 }

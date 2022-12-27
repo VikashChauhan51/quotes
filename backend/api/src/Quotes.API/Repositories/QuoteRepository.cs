@@ -42,6 +42,7 @@ public class QuoteRepository : IQuoteRepository
 
     public void UpdateQuote(Quote quote)
     {
+        quote.CreatedOn = DateTimeOffset.UtcNow;
         _context.Quotes.Update(quote);
     }
 

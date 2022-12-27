@@ -1,14 +1,19 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using Quotes.API.Authorization;
 using Quotes.API.Configurations;
 using Quotes.API.Constants;
 using Quotes.API.DbContexts;
 using Quotes.API.Helpers;
+using Quotes.API.Policies;
 using Serilog;
+using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
 
 namespace Quotes.API.Extensions;
@@ -37,13 +42,13 @@ internal static class HostingExtensions
                 new ProducesResponseTypeAttribute(
                     StatusCodes.Status415UnsupportedMediaType));
             configure.Filters.Add(
-       new ProducesResponseTypeAttribute(
+                 new ProducesResponseTypeAttribute(
            StatusCodes.Status400BadRequest));
             configure.Filters.Add(
-       new ProducesResponseTypeAttribute(
+                new ProducesResponseTypeAttribute(
            StatusCodes.Status401Unauthorized));
             configure.Filters.Add(
-      new ProducesResponseTypeAttribute(
+                new ProducesResponseTypeAttribute(
            StatusCodes.Status403Forbidden));
             configure.Filters.Add(
                 new ProducesResponseTypeAttribute(
@@ -55,7 +60,7 @@ internal static class HostingExtensions
             configure.Filters.Add(
               new ConsumesAttribute(HeaderKeys.Json));
             configure.Filters.Add(
-             new ProducesAttribute(HeaderKeys.Json, HeaderKeys.HalJson));
+             new ProducesAttribute(HeaderKeys.Json, HeaderKeys.HalJson)); 
 
         }).ConfigureApiBehaviorOptions(options =>
         {
@@ -121,16 +126,57 @@ internal static class HostingExtensions
             builder.Configuration.GetSection(ConfigSessions.SqlServerConfig).Bind(sqlConfig);
             sqlConfig.Credentials = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
             var connectionString = ConnectionStringBuilder.BuildConnectionString(sqlConfig!);
-            options.UseSqlServer(connectionString);
+            options.UseSqlServer(connectionString, setupAction => 
+            {
+                setupAction.EnableRetryOnFailure(3);
+            });
         });
 
-
-
-
+        builder.Services.AddSingleton(Log.Logger);
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<IAuthorizationHandler, MustOwnQuoteHandler>();
         builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         builder.Services.AddScoped<IValidator<QuoteModel>, QuoteValidator>();
         builder.Services.AddScoped<IQuoteRepository, QuoteRepository>();
         builder.Services.AddOptions();
+
+        JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+        var authConfig = new AuthenticationConfig();
+        builder.Configuration.GetSection(ConfigSessions.AuthenticationConfig).Bind(authConfig);
+        authConfig.ClientId = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientIdKey)!;
+        authConfig.ClientSecret = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientSecretKey)!;
+
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+
+              .AddOAuth2Introspection(options =>
+              {
+                 
+
+                  options.Authority = authConfig.Authority;
+                  options.ClientId = authConfig.ClientId;
+                  options.ClientSecret = authConfig.ClientSecret;
+                  options.NameClaimType = authConfig.NameClaimType;
+                  options.RoleClaimType = authConfig.RoleClaimType;
+              });
+
+
+        builder.Services.AddAuthorization(authorizationOptions =>
+        {
+            authorizationOptions.AddPolicy(
+                "UserCanAddQuote", AuthorizationPolicies.CanAddQuote());
+            authorizationOptions.AddPolicy(
+                "ClientApplicationCanWrite", policyBuilder =>
+                {
+                    policyBuilder.RequireClaim("scope", authConfig.Scopes);
+                });
+            authorizationOptions.AddPolicy(
+                "MustOwnQuote", policyBuilder =>
+                {
+                    policyBuilder.RequireAuthenticatedUser();
+                    policyBuilder.AddRequirements(new MustOwnQuoteRequirement());
+
+                });
+        });
 
         return builder.Build();
     }
