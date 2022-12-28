@@ -20,7 +20,7 @@ public class MustOwnQuoteHandler : AuthorizationHandler<MustOwnQuoteRequirement>
     protected override async Task HandleRequirementAsync( AuthorizationHandlerContext context, MustOwnQuoteRequirement requirement)
     {
         var quoteId = _httpContextAccessor.HttpContext?
-            .GetRouteValue("id")?.ToString();
+            .GetRouteValue("quoteId")?.ToString();
 
         if (!Guid.TryParse(quoteId, out Guid quoteIdAsGuid))
         {

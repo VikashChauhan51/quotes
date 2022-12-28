@@ -1,0 +1,21 @@
+﻿@model Quotes.Client.ViewModels.QuoteIndexViewModel
+
+<div class="bottomMarginDefault">
+</div>
+
+<div class="container">
+      <div class="row">
+        @foreach (var item in Model.Quotes)
+        {
+           <div class="pull-left col-md-4">            
+                <div>
+                    <div class="h6 topMarginSmall">@item.Message</div>
+                    <div class="bottomMarginDefault">
+                        <a asp-action="EditQuote" asp-controller="Quote" asp-route-id="@item.Id">Edit Quote</a> |
+                        <a asp-action="DeleteQuote" asp-controller="Quote" asp-route-id="@item.Id">Delete Quote</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div> 
