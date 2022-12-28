@@ -2,8 +2,9 @@
 
 namespace Quotes.Client.Models;
 
-public class QuoteForCreation
+public class QuoteForUpdation
 {
+    public Guid Id { get; set; }
 
     [Required]
     [MaxLength(150)]

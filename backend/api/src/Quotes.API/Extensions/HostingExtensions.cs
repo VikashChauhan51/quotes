@@ -167,7 +167,7 @@ internal static class HostingExtensions
             authorizationOptions.AddPolicy(
                 "ClientApplicationCanWrite", policyBuilder =>
                 {
-                    policyBuilder.RequireClaim("scope", authConfig.Scopes);
+                    policyBuilder.RequireClaim("scope", "quoteapi.write");
                 });
             authorizationOptions.AddPolicy(
                 "MustOwnQuote", policyBuilder =>

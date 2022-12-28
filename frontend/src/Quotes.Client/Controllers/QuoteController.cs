@@ -1,13 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 using System.Text.Json;
 using Quotes.Client.Models;
 using Quotes.Client.ViewModels;
+using System.Net.Http.Headers;
 
 namespace Quotes.Client.Controllers;
 
@@ -25,7 +24,7 @@ public class QuoteController : Controller
             throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
-    // GET: QuoteController
+   
     public async Task<ActionResult> Index()
     {
         await LogIdentityInformation();
@@ -48,73 +47,120 @@ public class QuoteController : Controller
         }
     }
 
-    // GET: QuoteController/Details/5
-    public ActionResult Details(int id)
+
+    public async Task<IActionResult> EditQuote(Guid id)
     {
-        return View();
+
+        var httpClient = _httpClientFactory.CreateClient("APIClient");
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/api/v1/quotes/{id}");
+
+        var response = await httpClient.SendAsync(
+            request, HttpCompletionOption.ResponseHeadersRead);
+
+        response.EnsureSuccessStatusCode();
+
+        using (var responseStream = await response.Content.ReadAsStreamAsync())
+        {
+            var deserializedQuote = await JsonSerializer.DeserializeAsync<Quote>(responseStream);
+
+            if (deserializedQuote == null)
+            {
+                throw new Exception("Deserialized quote must not be null.");
+            }
+
+            var editQuoteViewModel = new QuoteForUpdation()
+            {
+                Id = deserializedQuote.Id,
+                Message = deserializedQuote.Message
+            };
+
+            return View(editQuoteViewModel);
+        }
     }
 
-    // GET: QuoteController/Create
-    public ActionResult Create()
-    {
-        return View();
-    }
-
-    // POST: QuoteController/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public ActionResult Create(IFormCollection collection)
+    public async Task<IActionResult> EditQuote(QuoteForUpdation editQuoteViewModel)
     {
-        try
-        {
-            return RedirectToAction(nameof(Index));
-        }
-        catch
+        if (!ModelState.IsValid)
         {
             return View();
         }
+
+        var quoteForUpdate = new QuoteForCreation {Message= editQuoteViewModel.Message };
+        var serializedQuoteForUpdate = JsonSerializer.Serialize(quoteForUpdate);
+
+        var httpClient = _httpClientFactory.CreateClient("APIClient");
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"/api/v1/quotes/{editQuoteViewModel.Id}")
+        {
+            Content = new StringContent(
+                serializedQuoteForUpdate, new MediaTypeHeaderValue(
+                "application/json"))
+        };
+
+        var response = await httpClient.SendAsync(
+            request, HttpCompletionOption.ResponseHeadersRead);
+
+        response.EnsureSuccessStatusCode();
+
+        return RedirectToAction("Index");
     }
 
-    // GET: QuoteController/Edit/5
-    public ActionResult Edit(int id)
+    public async Task<IActionResult> DeleteQuote(Guid id)
+    {
+        var httpClient = _httpClientFactory.CreateClient("APIClient");
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"/api/v1/quotes/{id}");
+
+        var response = await httpClient.SendAsync(
+            request, HttpCompletionOption.ResponseHeadersRead);
+
+        response.EnsureSuccessStatusCode();
+
+        return RedirectToAction("Index");
+    }
+
+    [Authorize(Policy = "UserCanAddQuote")]
+    public IActionResult AddQuote()
     {
         return View();
     }
 
-    // POST: QuoteController/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public ActionResult Edit(int id, IFormCollection collection)
+    [Authorize(Policy = "UserCanAddQuote")]
+    public async Task<IActionResult> AddQuote(QuoteForCreation addQuoteViewModel)
     {
-        try
-        {
-            return RedirectToAction(nameof(Index));
-        }
-        catch
+        if (!ModelState.IsValid)
         {
             return View();
         }
-    }
 
-    // GET: QuoteController/Delete/5
-    public ActionResult Delete(int id)
-    {
-        return View();
-    }
+        var serializedQuoteForCreation = JsonSerializer.Serialize(addQuoteViewModel);
 
-    // POST: QuoteController/Delete/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public ActionResult Delete(int id, IFormCollection collection)
-    {
-        try
+        var httpClient = _httpClientFactory.CreateClient("APIClient");
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            $"/api/v1/quotes")
         {
-            return RedirectToAction(nameof(Index));
-        }
-        catch
-        {
-            return View();
-        }
+            Content = new StringContent(serializedQuoteForCreation, new MediaTypeHeaderValue("application/json"))
+        };
+
+        var response = await httpClient.SendAsync(
+            request, HttpCompletionOption.ResponseHeadersRead);
+
+        response.EnsureSuccessStatusCode();
+
+        return RedirectToAction("Index");
     }
 
     public async Task LogIdentityInformation()
