@@ -5,6 +5,6 @@ namespace Quotes.API.Hal;
 public abstract class LinkedResource
 {
     [JsonProperty(PropertyName = "_links")]
-    public IList<ILink> Links { get; init; } = new List<ILink>();
+    public IEnumerable<ILink> Links { get; init; } = new List<ILink>();
 
 }

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Quotes.API.Extensions;
+using Quotes.API.Entities;
 
 namespace Quotes.API.Controllers;
 
@@ -16,8 +18,7 @@ public class QuotesController : ControllerBase
     public QuotesController(IQuoteRepository quoteRepository, IMapper mapper, ILogger logger, IValidator<QuoteModel> quoteValidator)
     {
         _quoteRepository = quoteRepository ?? throw new ArgumentNullException(nameof(quoteRepository));
-        _mapper = mapper ??
-                throw new ArgumentNullException(nameof(mapper));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _quoteValidator = quoteValidator ?? throw new ArgumentNullException(nameof(quoteValidator));
     }
@@ -38,7 +39,21 @@ public class QuotesController : ControllerBase
             return NotFound();
         }
         var quoteToReturn = _mapper.Map<QuoteModel>(quoteFromRepo);
-        return Ok(quoteToReturn);
+        if (this.HttpContext.IsJsonHalAcceptType())
+        {
+            var quoteLinks = CreateLinksForQuote(quoteId);
+
+            var response = new LinkedResourceItem<QuoteModel>
+            {
+                Data = quoteToReturn,
+                Links = quoteLinks
+            };
+            return Ok(response);
+        }
+        else
+        {
+            return Ok(quoteToReturn);
+        }        
     }
 
     [HttpPost(Name = "AddQuote")]
@@ -73,11 +88,29 @@ public class QuotesController : ControllerBase
 
         await _quoteRepository.SaveChangesAsync();
 
-        var quoteToReturn = _mapper.Map<Quote>(quoteEntity);
+        var quoteToReturn = _mapper.Map<QuoteModel>(quoteEntity);
 
-        return CreatedAtRoute("GetQuote",
-            new { id = quoteToReturn.Id },
-            quoteToReturn);
+        if (this.HttpContext.IsJsonHalAcceptType())
+        {
+            var quoteLinks = CreateLinksForQuote(quoteEntity.Id);
+
+            var response = new LinkedResourceItem<QuoteModel>
+            {
+                Data = quoteToReturn,
+                Links = quoteLinks
+            };
+            return CreatedAtRoute("GetQuote",
+            new { quoteId = quoteEntity.Id },
+            response);
+        }
+        else
+        {
+            return CreatedAtRoute("GetQuote",
+           new { quoteId = quoteEntity.Id },
+           quoteToReturn);
+        }
+
+       
     }
 
     [HttpPut("{quoteId}", Name = "UpdateQuote")]
@@ -128,4 +161,38 @@ public class QuotesController : ControllerBase
         return NoContent();
 
     }
+
+
+    private IEnumerable<ILink> CreateLinksForQuote(Guid quoteId)
+    {
+        return new List<Link> {
+         new Link
+         {
+             Href= Url.RouteUrl("GetQuote",  new { quoteId })!,
+             Rel= "self",
+             Method= HttpVerbs.Get
+         },
+        new Link
+        {
+            Href=Url.RouteUrl("AddQuote",new { })!,
+            Rel="create_quote",
+            Method=HttpVerbs.Post
+        },
+        new Link
+        {
+            Href= Url.RouteUrl("UpdateQuote", new { quoteId })!,
+            Rel="update_quote",
+            Method=HttpVerbs.Put
+        },
+        new Link
+        {
+            Href= Url.RouteUrl("DeleteQuote",  new { quoteId })!,
+            Rel= "delete_quote",
+            Method=HttpVerbs.Delete
+        }
+
+        };
+
+    }
+
 }

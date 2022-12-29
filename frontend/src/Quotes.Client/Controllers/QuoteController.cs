@@ -16,6 +16,7 @@ public class QuoteController : Controller
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<QuoteController> _logger;
+    private readonly string rootEndpoint = "/api/v1/root";
 
     public QuoteController(IHttpClientFactory httpClientFactory,
         ILogger<QuoteController> logger)
@@ -27,13 +28,11 @@ public class QuoteController : Controller
    
     public async Task<ActionResult> Index()
     {
-        await LogIdentityInformation();
-
-        var id=Guid.NewGuid().ToString();   
+        await LogIdentityInformation(); 
         var httpClient = _httpClientFactory.CreateClient("APIClient");
 
         var request = new HttpRequestMessage(
-            HttpMethod.Get,$"/api/v1/quotes/{id}");
+            HttpMethod.Get, rootEndpoint);
 
         var response = await httpClient.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead);
