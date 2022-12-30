@@ -139,20 +139,7 @@ internal static class HostingExtensions
                 return new ValueTask();
             };
 
-            options.AddPolicy("UserBasedRateLimiting", context =>
-            {
-                var ownerId = context.GetOwnerId() ?? context.Request.Headers.Host.ToString();
-                return RateLimitPartition.GetTokenBucketLimiter(ownerId, _ =>
-                new TokenBucketRateLimiterOptions
-                {
-                    TokenLimit = 5,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0,
-                    ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-                    TokensPerPeriod = 5,
-                    AutoReplenishment = false
-                });
-            });
+            options.AddPolicy("UserBasedRateLimiting",new UserBasedRateLimitingPolicy());
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
