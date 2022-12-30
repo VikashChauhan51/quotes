@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Quotes.API.DbContexts;
+using Quotes.API.Models;
 
 namespace Quotes.API.Repositories;
 
@@ -21,12 +22,20 @@ public class QuoteRepository : IQuoteRepository
     {
         return await _context.Quotes.FirstOrDefaultAsync(i => i.Id == id);
     }
-
-    public async Task<IEnumerable<Quote>> GetQuotesAsync(string ownerId)
+    public async Task<PagedModel<Quote>> GetQuotesAsync(string ownerId, int limit, int page, string text, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(text))
+        {
+            return await _context.Quotes
+           .AsNoTracking()
+           .Where(i => i.OwnerId == ownerId)
+           .OrderBy(i => i.CreatedOn).PaginateAsync(page, limit, cancellationToken);
+        }
+
         return await _context.Quotes
-            .Where(i => i.OwnerId == ownerId)
-            .OrderBy(i => i.Message).ToListAsync();
+           .AsNoTracking()
+           .Where(i => i.OwnerId == ownerId && i.Message.Contains(text))
+           .OrderBy(i => i.CreatedOn).PaginateAsync(page, limit, cancellationToken);
     }
 
     public async Task<bool> IsQuoteOwnerAsync(Guid id, string ownerId)
@@ -37,6 +46,7 @@ public class QuoteRepository : IQuoteRepository
 
     public void AddQuote(Quote quote)
     {
+        quote.CreatedOn = DateTimeOffset.UtcNow;
         _context.Quotes.Add(quote);
     }
 

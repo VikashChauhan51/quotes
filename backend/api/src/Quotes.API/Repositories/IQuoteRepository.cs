@@ -5,7 +5,7 @@
         void AddQuote(Quote quote);
         void DeleteQuote(Quote quote);
         Task<Quote?> GetQuoteAsync(Guid id);
-        Task<IEnumerable<Quote>> GetQuotesAsync(string ownerId);
+        Task<PagedModel<Quote>> GetQuotesAsync(string ownerId, int limit, int page,string text, CancellationToken cancellationToken);
         Task<bool> IsQuoteOwnerAsync(Guid id, string ownerId);
         Task<bool> QuoteExistsAsync(Guid id);
         Task<bool> SaveChangesAsync();
