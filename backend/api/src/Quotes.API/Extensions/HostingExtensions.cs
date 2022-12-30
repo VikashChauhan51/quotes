@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -13,8 +15,10 @@ using Quotes.API.DbContexts;
 using Quotes.API.Helpers;
 using Quotes.API.Policies;
 using Serilog;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
+using System.Threading.RateLimiting;
 
 namespace Quotes.API.Extensions;
 
@@ -60,7 +64,7 @@ internal static class HostingExtensions
             configure.Filters.Add(
               new ConsumesAttribute(HeaderKeys.Json));
             configure.Filters.Add(
-             new ProducesAttribute(HeaderKeys.Json, HeaderKeys.HalJson)); 
+             new ProducesAttribute(HeaderKeys.Json, HeaderKeys.HalJson));
 
         }).ConfigureApiBehaviorOptions(options =>
         {
@@ -119,6 +123,49 @@ internal static class HostingExtensions
         });
         builder.Services.AddAcceptHeader();
         builder.Services.AddMediaTypeHeader();
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            options.OnRejected = (context, cancellationToken) =>
+            {
+
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString(NumberFormatInfo.InvariantInfo);
+                }
+
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                return new ValueTask();
+            };
+
+            options.AddPolicy("UserBasedRateLimiting", context =>
+            {
+                var ownerId = context.GetOwnerId() ?? context.Request.Headers.Host.ToString();
+                return RateLimitPartition.GetTokenBucketLimiter(ownerId, _ =>
+                new TokenBucketRateLimiterOptions
+                {
+                    TokenLimit = 5,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0,
+                    ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+                    TokensPerPeriod = 5,
+                    AutoReplenishment = false
+                });
+            });
+
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                // one request at given moment of time
+                return RateLimitPartition.GetConcurrencyLimiter("DefaultRateLimit", _ => new ConcurrencyLimiterOptions
+                {
+                    PermitLimit = 1,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+            });
+
+        });
 
         builder.Services.AddDbContext<QuotesContext>(options =>
         {
@@ -126,7 +173,7 @@ internal static class HostingExtensions
             builder.Configuration.GetSection(ConfigSessions.SqlServerConfig).Bind(sqlConfig);
             sqlConfig.Credentials = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
             var connectionString = ConnectionStringBuilder.BuildConnectionString(sqlConfig!);
-            options.UseSqlServer(connectionString, setupAction => 
+            options.UseSqlServer(connectionString, setupAction =>
             {
                 setupAction.EnableRetryOnFailure(3);
             });
@@ -150,7 +197,7 @@ internal static class HostingExtensions
 
               .AddOAuth2Introspection(options =>
               {
-                 
+
 
                   options.Authority = authConfig.Authority;
                   options.ClientId = authConfig.ClientId;
@@ -209,7 +256,8 @@ internal static class HostingExtensions
         app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.MapControllers();
+        app.UseRateLimiter();
+        app.MapControllers().RequireRateLimiting("UserBasedRateLimiting");
 
         return app;
     }
