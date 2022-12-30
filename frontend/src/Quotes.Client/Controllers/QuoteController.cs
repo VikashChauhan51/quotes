@@ -2,11 +2,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using System.Text;
-using System.Text.Json;
 using Quotes.Client.Models;
 using Quotes.Client.ViewModels;
 using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text;
+using System.Collections.Generic;
 
 namespace Quotes.Client.Controllers;
 
@@ -25,25 +26,59 @@ public class QuoteController : Controller
             throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
-   
+
     public async Task<ActionResult> Index()
     {
-        await LogIdentityInformation(); 
         var httpClient = _httpClientFactory.CreateClient("APIClient");
 
         var request = new HttpRequestMessage(
             HttpMethod.Get, rootEndpoint);
 
-        var response = await httpClient.SendAsync(
-            request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await httpClient.SendAsync(request);
 
         response.EnsureSuccessStatusCode();
 
         using (var responseStream = await response.Content.ReadAsStreamAsync())
         {
-            var quotes = await JsonSerializer.DeserializeAsync<List<Quote>>(responseStream);
-            return View(new QuoteIndexViewModel(quotes ?? new List<Quote>()));
+
+
+            var links = await JsonConverterHelper.DeserializeAsync<Link[]>(responseStream);
+            TempData["Links"] = JsonConverterHelper.Serialize(links);
         }
+
+        //using (var responsestream = await response.content.readasstreamasync())
+        //{
+        //    var quotes = await jsonserializer.deserializeasync<list<quote>>(responsestream);
+        //    return view(new quoteindexviewmodel(quotes ?? new list<quote>()));
+        //}
+        return View(new QuoteIndexViewModel(new List<Quote>()));
+    }
+
+    public async Task<ActionResult> DetailsQuote(Guid id)
+    {
+        var httpClient = _httpClientFactory.CreateClient("APIClient");
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Get, rootEndpoint);
+
+        var response = await httpClient.SendAsync(request);
+
+        response.EnsureSuccessStatusCode();
+
+        using (var responseStream = await response.Content.ReadAsStreamAsync())
+        {
+
+
+            var links = await JsonConverterHelper.DeserializeAsync<Link[]>(responseStream);
+            TempData["Links"] = JsonConverterHelper.Serialize(links);
+        }
+
+        //using (var responsestream = await response.content.readasstreamasync())
+        //{
+        //    var quotes = await jsonserializer.deserializeasync<list<quote>>(responsestream);
+        //    return view(new quoteindexviewmodel(quotes ?? new list<quote>()));
+        //}
+        return View(new QuoteIndexViewModel(new List<Quote>()));
     }
 
 
@@ -89,7 +124,7 @@ public class QuoteController : Controller
             return View();
         }
 
-        var quoteForUpdate = new QuoteForCreation {Message= editQuoteViewModel.Message };
+        var quoteForUpdate = new QuoteForCreation { Message = editQuoteViewModel.Message };
         var serializedQuoteForUpdate = JsonSerializer.Serialize(quoteForUpdate);
 
         var httpClient = _httpClientFactory.CreateClient("APIClient");
@@ -128,9 +163,27 @@ public class QuoteController : Controller
     }
 
     [Authorize(Policy = "UserCanAddQuote")]
-    public IActionResult AddQuote()
+    public async Task<IActionResult> AddQuote()
     {
-        return View();
+        
+        var httpClient = _httpClientFactory.CreateClient("APIClient");
+
+        var request = new HttpRequestMessage(
+            HttpMethod.Get, rootEndpoint);
+
+        var response = await httpClient.SendAsync(request);
+
+        response.EnsureSuccessStatusCode();
+
+        using (var responseStream = await response.Content.ReadAsStreamAsync())
+        {
+
+
+            var links = await JsonConverterHelper.DeserializeAsync<Link[]>(responseStream);
+            TempData["quoteLinks"] = JsonConverterHelper.Serialize(links);
+            return View(new QuoteForCreation { Links = links! });
+        }
+
     }
 
     [HttpPost]
@@ -142,53 +195,31 @@ public class QuoteController : Controller
         {
             return View();
         }
+        var links = JsonConverterHelper.Deserialize<Link[]>(TempData["quoteLinks"].ToString());    
+        var endPoint = links?.First(x => x.Method == HttpVerbs.Post).Href;
 
-        var serializedQuoteForCreation = JsonSerializer.Serialize(addQuoteViewModel);
+        var serializedQuoteForCreation = JsonSerializer.Serialize(new QuoteDto { Message = addQuoteViewModel.Message });
 
         var httpClient = _httpClientFactory.CreateClient("APIClient");
 
         var request = new HttpRequestMessage(
-            HttpMethod.Post,
-            $"/api/v1/quotes")
+            HttpMethod.Post, endPoint)
         {
-            Content = new StringContent(serializedQuoteForCreation, new MediaTypeHeaderValue("application/json"))
+            Content = new StringContent(serializedQuoteForCreation, new MediaTypeHeaderValue(HeaderKeys.Json))
         };
 
         var response = await httpClient.SendAsync(
             request, HttpCompletionOption.ResponseHeadersRead);
 
         response.EnsureSuccessStatusCode();
-
-        return RedirectToAction("Index");
-    }
-
-    public async Task LogIdentityInformation()
-    {
-        // get the saved identity token
-        var identityToken = await HttpContext
-            .GetTokenAsync(OpenIdConnectParameterNames.IdToken);
-
-        // get the saved access token
-        var accessToken = await HttpContext
-            .GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
-
-        // get the refresh token
-        var refreshToken = await HttpContext
-            .GetTokenAsync(OpenIdConnectParameterNames.RefreshToken);
-
-        var userClaimsStringBuilder = new StringBuilder();
-        foreach (var claim in User.Claims)
+        using (var responseStream = await response.Content.ReadAsStreamAsync())
         {
-            userClaimsStringBuilder.AppendLine(
-                $"Claim type: {claim.Type} - Claim value: {claim.Value}");
+
+
+            var quotewithLinks = await JsonConverterHelper.DeserializeAsync<QuoteForCreation>(responseStream);
+            TempData["quoteLinks"] = JsonConverterHelper.Serialize(quotewithLinks!.Links);
         }
 
-        // log token & claims
-        _logger.LogInformation($"Identity token & user claims: " +
-            $"\n{identityToken} \n{userClaimsStringBuilder}");
-        _logger.LogInformation($"Access token: " +
-            $"\n{accessToken}");
-        _logger.LogInformation($"Refresh token: " +
-            $"\n{refreshToken}");
+        return RedirectToAction("Index");
     }
 }

@@ -10,7 +10,7 @@ namespace Quotes.API.Controllers
     {
 
         [HttpGet(Name = "GetRoot")]
-        public IActionResult Get()
+        public ActionResult<IEnumerable<ILink>> Get()
         {
             // create links for root
             var links = new List<Link>

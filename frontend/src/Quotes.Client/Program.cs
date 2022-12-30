@@ -4,13 +4,20 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Net.Http.Headers;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews()
-    .AddJsonOptions(configure =>
-        configure.JsonSerializerOptions.PropertyNamingPolicy = null);
+    .AddNewtonsoftJson(setupAction =>
+    {
+        setupAction.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
+        setupAction.SerializerSettings.ContractResolver =
+            new CamelCasePropertyNamesContractResolver();
+        setupAction.SerializerSettings.Converters.Add(new StringEnumConverter());
+    });
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -21,7 +28,8 @@ builder.Services.AddHttpClient("APIClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7149/");
     client.DefaultRequestHeaders.Clear();
-    client.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.Json);
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
 }).AddUserAccessTokenHandler();
 
 builder.Services.AddHttpClient("IDPClient", client =>

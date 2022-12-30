@@ -1,6 +1,6 @@
 ﻿namespace Quotes.Client.Models;
 
-public record Quote
+public class Quote: LinkedResource
 {
     public Guid Id { get; set; }
     public string Message { get; set; } = string.Empty;

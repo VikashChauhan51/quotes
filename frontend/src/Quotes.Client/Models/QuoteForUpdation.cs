@@ -2,7 +2,7 @@
 
 namespace Quotes.Client.Models;
 
-public class QuoteForUpdation
+public class QuoteForUpdation: LinkedResource
 {
     public Guid Id { get; set; }
 
