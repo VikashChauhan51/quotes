@@ -6,6 +6,7 @@ using Quotes.API.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.Text;
+using Quotes.API.Constants;
 
 namespace Quotes.API.Controllers;
 
@@ -31,7 +32,7 @@ public class QuotesController : ControllerBase
 
 
     [HttpGet("{quoteId}", Name = "GetQuote")]
-    [Authorize("MustOwnQuote")]
+    [Authorize(Policy = ApiConstants.MustOwnQuoteAuthorizationPolicy)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<QuoteModel>> Get(Guid quoteId)
@@ -56,12 +57,12 @@ public class QuotesController : ControllerBase
         else
         {
             return Ok(quoteToReturn);
-        }        
+        }
     }
 
     [HttpPost(Name = "AddQuote")]
-    [Authorize(Policy = "UserCanAddQuote")]
-    [Authorize(Policy = "ClientApplicationCanWrite")]
+    [Authorize(Policy = ApiConstants.CanAddQuoteAuthorizationPolicy)]
+    [Authorize(Policy = ApiConstants.ClientCanWriteAuthorizationPolicy)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -114,11 +115,11 @@ public class QuotesController : ControllerBase
            quoteToReturn);
         }
 
-       
+
     }
 
     [HttpPut("{quoteId}", Name = "UpdateQuote")]
-    [Authorize("MustOwnQuote")]
+    [Authorize(ApiConstants.MustOwnQuoteAuthorizationPolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -149,7 +150,7 @@ public class QuotesController : ControllerBase
     }
 
     [HttpDelete("{quoteId}", Name = "DeleteQuote")]
-    [Authorize("MustOwnQuote")]
+    [Authorize(ApiConstants.MustOwnQuoteAuthorizationPolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Delete(Guid quoteId)

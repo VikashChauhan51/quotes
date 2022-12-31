@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Quotes.API.Constants;
 using System.Text.Json;
 
 namespace Quotes.API.Controllers;
@@ -19,7 +20,7 @@ public class QuotesSearchController : ControllerBase
     }
 
     [HttpGet(Name = "Search")]
-    [Authorize("MustOwnQuote")]
+    [Authorize(ApiConstants.MustOwnQuoteAuthorizationPolicy)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IEnumerable<QuoteModel>>> Get([FromQuery] UrlQueryParameters urlQueryParameters,

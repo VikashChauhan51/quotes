@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.RateLimiting;
+using Quotes.API.Configurations;
 using System.Globalization;
 using System.Threading.RateLimiting;
 
@@ -6,9 +7,10 @@ namespace Quotes.API.Policies;
 
 public class UserBasedRateLimitingPolicy : IRateLimiterPolicy<string>
 {
-    public UserBasedRateLimitingPolicy()
+    private readonly TokenBucketRateLimiterConfig _tokenBucketRateLimiterConfig;
+    public UserBasedRateLimitingPolicy(TokenBucketRateLimiterConfig tokenBucketRateLimiterConfig)
     {
-
+        _tokenBucketRateLimiterConfig = tokenBucketRateLimiterConfig ?? throw new ArgumentException(nameof(tokenBucketRateLimiterConfig));
     }
 
     public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected { get; } =
@@ -21,6 +23,7 @@ public class UserBasedRateLimitingPolicy : IRateLimiterPolicy<string>
             }
 
             context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            //TODO: log into DB if needed
             return new ValueTask();
         };
 
@@ -30,12 +33,12 @@ public class UserBasedRateLimitingPolicy : IRateLimiterPolicy<string>
         return RateLimitPartition.GetTokenBucketLimiter(ownerId, _ =>
         new TokenBucketRateLimiterOptions
         {
-            TokenLimit = 5,
-            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-            QueueLimit = 0,
-            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
-            TokensPerPeriod = 5,
-            AutoReplenishment = false
+            TokenLimit = _tokenBucketRateLimiterConfig.TokenLimit,
+            QueueProcessingOrder = (QueueProcessingOrder)_tokenBucketRateLimiterConfig.QueueProcessingOrder,
+            QueueLimit = _tokenBucketRateLimiterConfig.QueueLimit,
+            ReplenishmentPeriod = TimeSpan.FromSeconds(_tokenBucketRateLimiterConfig.ReplenishmentPeriodSeconds),
+            TokensPerPeriod = _tokenBucketRateLimiterConfig.TokensPerPeriod,
+            AutoReplenishment = _tokenBucketRateLimiterConfig.AutoReplenishment
         });
     }
 }

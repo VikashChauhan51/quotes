@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using IdentityModel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -125,6 +126,9 @@ internal static class HostingExtensions
         builder.Services.AddMediaTypeHeader();
         builder.Services.AddRateLimiter(options =>
         {
+
+            var rateLimitConfig = new TokenBucketRateLimiterConfig();
+            builder.Configuration.GetSection(ConfigSessions.TokenBucketRateLimiterConfig).Bind(rateLimitConfig);
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
             options.OnRejected = (context, cancellationToken) =>
@@ -139,12 +143,12 @@ internal static class HostingExtensions
                 return new ValueTask();
             };
 
-            options.AddPolicy("UserBasedRateLimiting",new UserBasedRateLimitingPolicy());
+            options.AddPolicy(ApiConstants.UserBasedRateLimitingPolicy, new UserBasedRateLimitingPolicy(rateLimitConfig));
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
-                // one request at given moment of time
-                return RateLimitPartition.GetConcurrencyLimiter("DefaultRateLimit", _ => new ConcurrencyLimiterOptions
+
+                return RateLimitPartition.GetConcurrencyLimiter(ApiConstants.DefaultRateLimitingPolicy, _ => new ConcurrencyLimiterOptions
                 {
                     PermitLimit = 1,
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
@@ -197,14 +201,16 @@ internal static class HostingExtensions
         builder.Services.AddAuthorization(authorizationOptions =>
         {
             authorizationOptions.AddPolicy(
-                "UserCanAddQuote", AuthorizationPolicies.CanAddQuote());
+               ApiConstants.CanAddQuoteAuthorizationPolicy, AuthorizationPolicies.CanAddQuote());
             authorizationOptions.AddPolicy(
-                "ClientApplicationCanWrite", policyBuilder =>
+                ApiConstants.ClientCanWriteAuthorizationPolicy, policyBuilder =>
                 {
-                    policyBuilder.RequireClaim("scope", "quoteapi.write");
+                    var scops = builder.Configuration.GetSection(ConfigSessions.ClientApplicationCanWriteScopes)
+                                .GetChildren()?.Select(x => x.Value)?.ToArray();
+                    policyBuilder.RequireClaim(JwtClaimTypes.Scope, scops!);
                 });
             authorizationOptions.AddPolicy(
-                "MustOwnQuote", policyBuilder =>
+                ApiConstants.MustOwnQuoteAuthorizationPolicy, policyBuilder =>
                 {
                     policyBuilder.RequireAuthenticatedUser();
                     policyBuilder.AddRequirements(new MustOwnQuoteRequirement());
@@ -244,7 +250,7 @@ internal static class HostingExtensions
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
-        app.MapControllers().RequireRateLimiting("UserBasedRateLimiting");
+        app.MapControllers().RequireRateLimiting(ApiConstants.UserBasedRateLimitingPolicy);
 
         return app;
     }
