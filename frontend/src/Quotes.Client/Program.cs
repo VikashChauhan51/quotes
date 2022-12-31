@@ -16,8 +16,25 @@ JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 builder.Services.AddAccessTokenManagement();
 
-// create an HttpClient used for accessing the API
-builder.Services.AddHttpClient("APIClient", client =>
+builder.Services.AddHttpClient<IQuoteAuthenticationService, QuoteAuthenticationService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:5001/");
+});
+builder.Services.AddHttpClient<IRootService, RootService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7149/");
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
+}).AddUserAccessTokenHandler();
+
+builder.Services.AddHttpClient<ISearchService, SearchService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7149/");
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
+}).AddUserAccessTokenHandler();
+
+builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 {
     client.BaseAddress = new Uri("https://localhost:7149/");
     client.DefaultRequestHeaders.Clear();
@@ -25,10 +42,6 @@ builder.Services.AddHttpClient("APIClient", client =>
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
 }).AddUserAccessTokenHandler();
 
-builder.Services.AddHttpClient<IQuoteAuthenticationService, QuoteAuthenticationService>(client =>
-{
-    client.BaseAddress = new Uri("https://localhost:5001/");
-});
 
 builder.Services.AddAuthentication(options =>
 {

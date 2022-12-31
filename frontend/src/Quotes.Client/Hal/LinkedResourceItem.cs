@@ -1,10 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace Quotes.Client.Hal;
 
 public class LinkedResourceItem<T> : LinkedResource
 {
-    [JsonPropertyName("_data")]
+    [JsonProperty(PropertyName = "_data")]
     public T Data { get; init; } = default!;
 }
 

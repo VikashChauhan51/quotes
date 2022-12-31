@@ -2,7 +2,7 @@
 
 public enum LinkedResourceType : byte
 {
-    None,
-    Prev,
-    Next
+    PreviousPage,
+    NextPage,
+    Current
 }

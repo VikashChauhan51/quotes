@@ -1,9 +1,11 @@
-﻿using System.Text.Json.Serialization;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Quotes.API.Hal;
 
 public class LinkedResourceItem<T>: LinkedResource
 {
-    [JsonPropertyName("_data")]
+    [JsonProperty(PropertyName = "_data")]
     public T Data { get; init; } = default!;
 }

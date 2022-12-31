@@ -20,10 +20,10 @@ public class QuotesSearchController : ControllerBase
     }
 
     [HttpGet(Name = "Search")]
-    [Authorize(ApiConstants.MustOwnQuoteAuthorizationPolicy)]
+    [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<IEnumerable<QuoteModel>>> Get([FromQuery] UrlQueryParameters urlQueryParameters,
+    public async Task<ActionResult> Get([FromQuery] UrlQueryParameters urlQueryParameters,
             CancellationToken cancellationToken)
     {
         var ownerId = HttpContext.GetOwnerId();
@@ -54,7 +54,7 @@ public class QuotesSearchController : ControllerBase
                 quotesFromRepo.HasNext,
                 quotesFromRepo.HasPrevious);
 
-            var quotesWithLinks = CreateLinksForQuotes(quotesToReturn);
+            var quotesWithLinks = CreateLinksForQuotes(quotesFromRepo.Items);
             var response = new QuotesPageCollectionModel
             {
                 Items = quotesWithLinks,
@@ -67,15 +67,16 @@ public class QuotesSearchController : ControllerBase
 
     }
 
-    private IEnumerable<LinkedResourceItem<QuoteModel>> CreateLinksForQuotes(IEnumerable<QuoteModel> quotes)
+    private IEnumerable<LinkedResourceItem<QuoteModel>> CreateLinksForQuotes(IEnumerable<Quote> quotes)
     {
         var list = new List<LinkedResourceItem<QuoteModel>>();
         foreach (var quote in quotes)
         {
             var quoteLinks = CreateLinksForQuote(quote.Id);
+            var quoteData = _mapper.Map<QuoteModel>(quote);
             list.Add(new LinkedResourceItem<QuoteModel>
             {
-                Data = quote,
+                Data = quoteData,
                 Links = quoteLinks
             });
 

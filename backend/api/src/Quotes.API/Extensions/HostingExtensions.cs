@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Quotes.API.Authorization;
@@ -80,7 +81,11 @@ internal static class HostingExtensions
                 };
         }).AddNewtonsoftJson(setupAction =>
         {
-            setupAction.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
+            setupAction.SerializerSettings.Formatting = Formatting.Indented;
+
+            setupAction.SerializerSettings.DateParseHandling = DateParseHandling.DateTimeOffset;
+            setupAction.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+            setupAction.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
             setupAction.SerializerSettings.ContractResolver =
                 new CamelCasePropertyNamesContractResolver();
             setupAction.SerializerSettings.Converters.Add(new StringEnumConverter());

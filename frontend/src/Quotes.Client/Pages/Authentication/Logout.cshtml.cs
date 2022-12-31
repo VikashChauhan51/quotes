@@ -32,7 +32,7 @@ public class LogoutModel : PageModel
             .RevokeTokenAsync(new()
             {
                 Address = discoveryDocumentResponse.RevocationEndpoint,
-                ClientId = "quotesclient",
+                ClientId = "quoteclient",
                 ClientSecret = "secret",
                 Token = await this.HttpContext.GetTokenAsync(
                     OpenIdConnectParameterNames.AccessToken)
@@ -47,7 +47,7 @@ public class LogoutModel : PageModel
             .RevokeTokenAsync(new()
             {
                 Address = discoveryDocumentResponse.RevocationEndpoint,
-                ClientId = "quotesclient",
+                ClientId = "quoteclient",
                 ClientSecret = "secret",
                 Token = await this.HttpContext.GetTokenAsync(
                 OpenIdConnectParameterNames.RefreshToken)

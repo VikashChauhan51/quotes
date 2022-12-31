@@ -2,7 +2,7 @@
 
 namespace Quotes.Client.Models;
 
-public class QuoteForCreation: LinkedResource
+public class QuoteForCreation
 {
 
     [Required]

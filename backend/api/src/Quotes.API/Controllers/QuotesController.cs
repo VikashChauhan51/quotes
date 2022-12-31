@@ -35,7 +35,7 @@ public class QuotesController : ControllerBase
     [Authorize(Policy = ApiConstants.MustOwnQuoteAuthorizationPolicy)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuoteModel>> Get(Guid quoteId)
+    public async Task<ActionResult> Get(Guid quoteId)
     {
         var quoteFromRepo = await _quoteRepository.GetQuoteAsync(quoteId);
         if (quoteFromRepo is null)
@@ -66,9 +66,9 @@ public class QuotesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<QuoteModel>> Post([FromBody] QuoteModel quote)
+    public async Task<ActionResult> Post([FromBody] QuoteModel quote)
     {
-        await LogIdentityInformation();
+         
         var validationResult = await _quoteValidator.ValidateAsync(quote);
 
         if (!validationResult.IsValid)
@@ -200,34 +200,6 @@ public class QuotesController : ControllerBase
 
     }
 
-    private async Task LogIdentityInformation()
-    {
-        // get the saved identity token
-        var identityToken = await HttpContext
-            .GetTokenAsync(OpenIdConnectParameterNames.IdToken);
-
-        // get the saved access token
-        var accessToken = await HttpContext
-            .GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
-
-        // get the refresh token
-        var refreshToken = await HttpContext
-            .GetTokenAsync(OpenIdConnectParameterNames.RefreshToken);
-
-        var userClaimsStringBuilder = new StringBuilder();
-        foreach (var claim in User.Claims)
-        {
-            userClaimsStringBuilder.AppendLine(
-                $"Claim type: {claim.Type} - Claim value: {claim.Value}");
-        }
-
-        // log token & claims
-        _logger.Information($"Identity token & user claims: " +
-            $"\n{identityToken} \n{userClaimsStringBuilder}");
-        _logger.Information($"Access token: " +
-            $"\n{accessToken}");
-        _logger.Information($"Refresh token: " +
-            $"\n{refreshToken}");
-    }
+   
 
 }
