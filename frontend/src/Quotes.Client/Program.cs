@@ -1,23 +1,16 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Net.Http.Headers;
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.AspNetCore.Authorization;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
+using Quotes.Client.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews()
-    .AddNewtonsoftJson(setupAction =>
-    {
-        setupAction.SerializerSettings.Formatting = Newtonsoft.Json.Formatting.Indented;
-        setupAction.SerializerSettings.ContractResolver =
-            new CamelCasePropertyNamesContractResolver();
-        setupAction.SerializerSettings.Converters.Add(new StringEnumConverter());
-    });
+builder.Services.AddRazorPages();
+builder.Services.AddHttpContextAccessor();
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
@@ -32,7 +25,7 @@ builder.Services.AddHttpClient("APIClient", client =>
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
 }).AddUserAccessTokenHandler();
 
-builder.Services.AddHttpClient("IDPClient", client =>
+builder.Services.AddHttpClient<IQuoteAuthenticationService, QuoteAuthenticationService>(client =>
 {
     client.BaseAddress = new Uri("https://localhost:5001/");
 });
@@ -83,21 +76,17 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapRazorPages();
 
 app.Run();

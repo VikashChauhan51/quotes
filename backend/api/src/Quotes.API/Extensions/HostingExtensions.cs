@@ -18,6 +18,7 @@ using Quotes.API.Policies;
 using Serilog;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.RateLimiting;
 
@@ -147,12 +148,14 @@ internal static class HostingExtensions
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
-
-                return RateLimitPartition.GetConcurrencyLimiter(ApiConstants.DefaultRateLimitingPolicy, _ => new ConcurrencyLimiterOptions
+                var concurrencyRateLimitConfig = new ConcurrencyLimiterConfig();
+                builder.Configuration.GetSection(ConfigSessions.ConcurrencyRateLimiterConfig).Bind(concurrencyRateLimitConfig);
+                var host = context.Request.Headers.Host.ToString();
+                return RateLimitPartition.GetConcurrencyLimiter(host, _ => new ConcurrencyLimiterOptions
                 {
-                    PermitLimit = 1,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0
+                    PermitLimit = concurrencyRateLimitConfig.PermitLimit,
+                    QueueProcessingOrder = (QueueProcessingOrder)concurrencyRateLimitConfig.QueueProcessingOrder,
+                    QueueLimit = concurrencyRateLimitConfig.QueueLimit
                 });
             });
 
