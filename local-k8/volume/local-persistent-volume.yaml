@@ -1,0 +1,51 @@
+
+# open powershell in admin mode and run this command: mkdir c:\mounted-k8
+---
+#
+# Custom storage class
+#
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage-class
+provisioner: docker.io/hostpath
+
+
+---
+#
+# Custom persistent volume
+#
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-shared-volume
+  labels:
+    type: local
+spec:
+  storageClassName: local-storage-class
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/run/desktop/mnt/host/c/mounted-k8"
+    type: DirectoryOrCreate
+  persistentVolumeReclaimPolicy: Retain  
+
+
+---
+#
+# Custom persistent volume claim
+#
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: local-shared-pvc
+spec:
+  storageClassName: local-storage-class
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+

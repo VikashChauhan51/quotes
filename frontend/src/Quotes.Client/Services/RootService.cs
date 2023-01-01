@@ -12,7 +12,7 @@ public class RootService : IRootService
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
     }
 
-    public async Task<IEnumerable<ILink>> GetLinksAsync()
+    public async Task<IEnumerable<Link>> GetLinksAsync()
     {
         var request = new HttpRequestMessage(
         HttpMethod.Get, rootEndpoint);
@@ -23,7 +23,7 @@ public class RootService : IRootService
 
         using (var responseStream = await response.Content.ReadAsStreamAsync())
         {
-            return await JsonConverterHelper.DeserializeAsync<Link[]>(responseStream) ?? Array.Empty<ILink>();
+            return await JsonConverterHelper.DeserializeAsync<Link[]>(responseStream) ?? Array.Empty<Link>();
 
         }
     }

@@ -39,7 +39,7 @@ public class QuoteService : IQuoteService
 
         }
     }
-    public async Task<QuoteResponse> Get(ILink link)
+    public async Task<QuoteResponse> Get(Link link)
     {
 
 
@@ -56,7 +56,7 @@ public class QuoteService : IQuoteService
         }
     }
 
-    public async Task Put(ILink link, QuoteForCreation quote)
+    public async Task Put(Link link, QuoteForCreation quote)
     {
         var serializedQuoteForCreation = JsonConverterHelper.Serialize(quote);
 
@@ -69,7 +69,7 @@ public class QuoteService : IQuoteService
 
 
     }
-    public async Task Delete(ILink link)
+    public async Task Delete(Link link)
     {
         var request = new HttpRequestMessage(
         HttpVerbsHelper.GetMethod(link.Method),

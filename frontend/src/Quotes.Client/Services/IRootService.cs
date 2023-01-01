@@ -2,6 +2,6 @@
 {
     public interface IRootService
     {
-        Task<IEnumerable<ILink>> GetLinksAsync();
+        Task<IEnumerable<Link>> GetLinksAsync();
     }
 }

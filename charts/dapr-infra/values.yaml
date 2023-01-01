@@ -1,0 +1,16 @@
+# all secret stores
+secretStore:
+  localk8:
+    enable: true
+    name: local-k8-secret-store
+# all state stores
+stateStore:
+  redis:
+    enable: true
+    name: state-redis
+    redisHost: "localhost:6379"
+    actorStateStore: true
+    enableTLS: false
+#TBT
+
+

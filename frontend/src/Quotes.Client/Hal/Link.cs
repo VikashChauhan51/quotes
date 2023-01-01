@@ -1,8 +1,7 @@
 ﻿
-
 namespace Quotes.Client.Hal;
 
-public class Link : ILink
+public class Link 
 {
 
     public string Href { get; init; } = default!;

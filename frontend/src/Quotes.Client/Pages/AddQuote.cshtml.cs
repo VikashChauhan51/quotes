@@ -22,13 +22,14 @@ public class AddQuoteModel : PageModel
     public QuoteForCreation Quote { get; set; }
     public async Task<IActionResult> OnGet()
     {
+         
         return Page();
     }
     public async Task<IActionResult> OnPost()
     {
         if (ModelState.IsValid)
         {
-
+            //TODO: IHttpContextAccessor null issue on post action....
             var response = _quoteService.Post(Quote);
         }
         return Page();

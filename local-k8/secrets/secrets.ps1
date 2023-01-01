@@ -1,0 +1,1 @@
+kubectl create secret generic db-credentials --from-literal=db-credentials='User Id=sa;Password=Welcome@123;' -n vik

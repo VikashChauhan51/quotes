@@ -12,7 +12,7 @@ public static class HttpVerbsHelper
         HttpVerbs.Put => HttpMethod.Put,
         HttpVerbs.Patch => HttpMethod.Patch,
         HttpVerbs.Delete => HttpMethod.Delete,
-        HttpVerbs.Options => HttpMethod.Options
-
+        HttpVerbs.Options => HttpMethod.Options,
+        _ => throw new NotImplementedException()
     };
 }

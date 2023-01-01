@@ -10,9 +10,7 @@ public static class JsonConverterHelper
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        settings.Converters.Add(new StringToGuidConverter());
         settings.Converters.Add(new StringToHttpVerbsEnumConverter());
-        settings.Converters.Add(new StringToDateTimeOffsetConverter());
         return await JsonSerializer.DeserializeAsync<T>(utf8Json, settings);
     }
 
@@ -22,9 +20,7 @@ public static class JsonConverterHelper
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        settings.Converters.Add(new StringToGuidConverter());
         settings.Converters.Add(new StringToHttpVerbsEnumConverter());
-        settings.Converters.Add(new StringToDateTimeOffsetConverter());
         return JsonSerializer.Deserialize<T>(json, settings);
     }
     public static string Serialize<T>(T value)
@@ -32,11 +28,11 @@ public static class JsonConverterHelper
         var settings = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
 
         };
-        settings.Converters.Add(new StringToGuidConverter());
         settings.Converters.Add(new StringToHttpVerbsEnumConverter());
-        settings.Converters.Add(new StringToDateTimeOffsetConverter());
         return JsonSerializer.Serialize(value, settings);
     }
+    
 }
