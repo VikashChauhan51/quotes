@@ -22,21 +22,21 @@ builder.Services.AddHttpClient<IQuoteAuthenticationService, QuoteAuthenticationS
 });
 builder.Services.AddHttpClient<IRootService, RootService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7149/");
+    client.BaseAddress = new Uri("https://localhost:7149");
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
 }).AddUserAccessTokenHandler();
 
 builder.Services.AddHttpClient<ISearchService, SearchService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7149/");
+    client.BaseAddress = new Uri("https://localhost:7149");
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
 }).AddUserAccessTokenHandler();
 
 builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7149/");
+    client.BaseAddress = new Uri("https://localhost:7149");
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.Json);
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);

@@ -34,7 +34,7 @@ public class SearchService : ISearchService
 
         using (var responseStream = await response.Content.ReadAsStreamAsync())
         {
-            return await JsonConverterHelper.DeserializeAsync<QuotesCollectionResponse>(responseStream);
+            return await JsonConverterHelper.DeserializeAsync<QuotesCollectionResponse>(responseStream) ?? new QuotesCollectionResponse();
 
         }
     }

@@ -6,7 +6,7 @@ namespace Quotes.Client.Services;
 public class RootService : IRootService
 {
     private readonly HttpClient _httpClient;
-    private readonly string rootEndpoint = "api/v1/root";
+    private readonly string rootEndpoint = "/api/v1/root";
     public RootService(HttpClient httpClient)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
