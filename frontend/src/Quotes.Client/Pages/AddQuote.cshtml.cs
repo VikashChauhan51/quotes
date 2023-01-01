@@ -1,35 +1,36 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Quotes.Client.Models;
 using Quotes.Client.Services;
 
-namespace Quotes.Client.Pages
+namespace Quotes.Client.Pages;
+
+[Authorize(Policy = "UserCanAddQuote")]
+public class AddQuoteModel : PageModel
 {
-    public class AddQuoteModel : PageModel
+    private readonly ILogger<IndexModel> _logger;
+
+    private readonly IQuoteService _quoteService;
+    public AddQuoteModel(ILogger<IndexModel> logger, IQuoteService quoteService)
     {
-        private readonly ILogger<IndexModel> _logger;
+        _logger = logger;
+        _quoteService = quoteService;
+    }
 
-        private readonly IQuoteService _quoteService;
-        public AddQuoteModel(ILogger<IndexModel> logger, IQuoteService quoteService)
+    [BindProperty]
+    public QuoteForCreation Quote { get; set; }
+    public async Task<IActionResult> OnGet()
+    {
+        return Page();
+    }
+    public async Task<IActionResult> OnPost()
+    {
+        if (ModelState.IsValid)
         {
-            _logger = logger;
-            _quoteService = quoteService;
-        }
 
-        [BindProperty]
-        public QuoteForCreation Quote { get; set; }
-        public async Task<IActionResult> OnGet()
-        {
-            return Page();
+            var response = _quoteService.Post(Quote);
         }
-        public async Task<IActionResult> OnPost()
-        {
-            if (ModelState.IsValid)
-            {
-
-                var response = _quoteService.Post(Quote);
-            }
-            return Page();
-        }
+        return Page();
     }
 }

@@ -9,4 +9,5 @@ public static class ConfigSessions
     public const string ClientApplicationFullAccessScopes = "ClientApplicationFullAccess";
     public const string TokenBucketRateLimiterConfig = "RateLimiting:TokenBucketRateLimiter";
     public const string ConcurrencyRateLimiterConfig = "RateLimiting:ConcurrencyLimiter";
+    public const string DaprConfig = "Dapr";
 }

@@ -16,6 +16,7 @@ using Quotes.API.Constants;
 using Quotes.API.DbContexts;
 using Quotes.API.Helpers;
 using Quotes.API.Policies;
+using Quotes.API.Services;
 using Serilog;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
@@ -89,6 +90,14 @@ internal static class HostingExtensions
             setupAction.SerializerSettings.ContractResolver =
                 new CamelCasePropertyNamesContractResolver();
             setupAction.SerializerSettings.Converters.Add(new StringEnumConverter());
+        }).AddDapr();
+
+        builder.Services.Configure<DaprConfig>(options =>
+        {
+            var daprConfig = new DaprConfig();
+            builder.Configuration.GetSection(ConfigSessions.DaprConfig).Bind(daprConfig);
+            options.SecretstoreName = daprConfig.SecretstoreName;
+            options.StatestoreName = daprConfig.StatestoreName;
         });
 
         builder.Services.Configure<MvcOptions>(config =>
@@ -132,7 +141,8 @@ internal static class HostingExtensions
         builder.Services.AddMediaTypeHeader();
         builder.Services.AddRateLimiter(options =>
         {
-
+            //TODO: use secret store
+            var secretStore = builder.Services.BuildServiceProvider().GetService<ISecretStore>();
             var rateLimitConfig = new TokenBucketRateLimiterConfig();
             builder.Configuration.GetSection(ConfigSessions.TokenBucketRateLimiterConfig).Bind(rateLimitConfig);
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -167,7 +177,7 @@ internal static class HostingExtensions
         });
 
         builder.Services.AddDbContext<QuotesContext>(options =>
-        {
+        {           
             var sqlConfig = new SqlConfig();
             builder.Configuration.GetSection(ConfigSessions.SqlServerConfig).Bind(sqlConfig);
             sqlConfig.Credentials = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
@@ -185,6 +195,9 @@ internal static class HostingExtensions
         builder.Services.AddScoped<IValidator<QuoteModel>, QuoteValidator>();
         builder.Services.AddScoped<IQuoteRepository, QuoteRepository>();
         builder.Services.AddOptions();
+        builder.Services.AddSingleton<ISecretStore, SecretStore>();
+        builder.Services.AddSingleton<IContentStore<string>, ContentStore<string>>();
+
 
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         var authConfig = new AuthenticationConfig();
