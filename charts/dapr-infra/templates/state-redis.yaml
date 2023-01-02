@@ -3,7 +3,7 @@ apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
   name: {{ .Values.stateStore.redis.name }}
-  labels: {{ - include "dapr-infra.labels" . | nindent 4 }}-stateredis
+  labels: {{- include "dapr-infra.labels" . | nindent 4 }}-stateredis
   namespace: {{ .Release.Namespace | quote }}
 spec:
   type: state.redis

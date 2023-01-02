@@ -1,1 +1,2 @@
 kubectl create secret generic db-credentials --from-literal=db-credentials='User Id=sa;Password=Welcome@123;' -n vik
+kubectl create secret generic authentication --from-literal=clientId='quoteapi' --from-literal=clientSecret='apisecret' -n vik

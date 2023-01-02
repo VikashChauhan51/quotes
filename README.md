@@ -7,6 +7,8 @@ Sample HATEOS API with swagger OpenAPI documentation and Identity Server.
 - Engineering laptop or desktop computer with **16-64GB** RAM and Windows 10 or later.
 - System administrator rights on laptop or desktop computer.
 
+## Steps to setup local development environment on **Windows 11**
+
 ### Install Chocolatey
 
 #### [Chocolatey](https://chocolatey.org/install)
@@ -238,7 +240,7 @@ Sample HATEOS API with swagger OpenAPI documentation and Identity Server.
 - With Chocolatey.
 
   ```powershell
-  #Execute on PowerShell in admin mode
+  # Execute on PowerShell in admin mode
    choco install openssl -y
   ```  
 
@@ -267,7 +269,7 @@ Sample HATEOS API with swagger OpenAPI documentation and Identity Server.
 - For new installation with Chocolatey, [Reference](https://community.chocolatey.org/packages/lens).
 
      ```powershell
-     #Execute on PowerShell in admin mode
+     # Execute on PowerShell in admin mode
     choco install lens -y
     ``` 
 
@@ -279,29 +281,29 @@ Sample HATEOS API with swagger OpenAPI documentation and Identity Server.
 - For new installation.
 
   ```powershell
-  #Execute on PowerShell in admin mode
+  # Execute on PowerShell in admin mode
    Set-ExecutionPolicy RemoteSigned -scope CurrentUser;
    powershell -Command "iwr -useb https://raw.githubusercontent.com/dapr/cli/master/install/install.ps1 | iex"
 
 
-  #Verify installation (run this in new terminal)
+  # Verify installation (run this in new terminal)
    dapr
   ```
 - For existing dapr, upgrade it
 
   ```powershell
-  #Execute on PowerShell in admin mode
+  # Execute on PowerShell in admin mode
    dapr upgrade
   ```
 
 ## Dapr initialization in self-hosted mode
 
 ```powershell
-#Execute on PowerShell in admin mode
+# Execute on PowerShell in admin mode
 dapr init
 # or
 dapr init --slim
-#Verify Dapr version
+# Verify Dapr version
 dapr --version
 ```
 > Here, dapr self-hosted mode initialization created **dapr_redis,dapr_zipkin**. You need to delete them for forever as we will deploy these separately later on.
@@ -309,15 +311,17 @@ dapr --version
 ## Dapr initialization in local K8s
 
 ```powershell
-#Execute on PowerShell in admin mode
+# Execute on PowerShell in admin mode
 dapr init -k
-#Verify Dapr version
+# Verify Dapr version
 dapr status -k
 ```
-## Create namespace in local k8s
+## Create namespaces in local k8s
 
 ```powershell
- kubectl create ns vik
+kubectl create ns vik
+kubectl create ns monitoring
+kubectl create ns ingress-nginx
 ```
 
 ## Add helm repos
@@ -325,8 +329,17 @@ dapr status -k
 helm repo add bitnami https://charts.bitnami.com/bitnami 
 helm repo add jetstack https://charts.jetstack.io
 helm repo add kafka-ui https://provectus.github.io/kafka-ui
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 helm repo list
+```
+### Install Cert Manager
+```powershell
+helm install cert-manager jetstack/cert-manager --namespace vik --version v1.8.2 --set installCRDs=true
+```
+### Install Ingress controller [Link](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx)
+```powershell
+helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx  --set service.loadBalancerIP='127.0.0.1' --set admissionWebhooks.enabled=false --set extraArgs.enable-ssl-passthrough=false
 ```
 ### Install MsSqlServer
 
@@ -355,10 +368,10 @@ helm repo list
 
   helm install zookeeper bitnami/zookeeper --set replicaCount=1 --set auth.enabled=false --set allowAnonymousLogin=true -n vik
 
-  #ZooKeeper can be accessed via port 2181 on the following DNS name from within your cluster:
+  # ZooKeeper can be accessed via port 2181 on the following DNS name from within your cluster:
   # zookeeper.vik.svc.cluster.local
 
-  #To connect to your ZooKeeper server from outside the cluster execute the following commands:
+  # To connect to your ZooKeeper server from outside the cluster execute the following commands:
 
     kubectl port-forward --namespace vik svc/zookeeper 2181:2181 & zkCli.sh 127.0.0.1:2181
 
@@ -367,11 +380,11 @@ helm repo list
 
   ```powershell
   helm install kafka bitnami/kafka --set zookeeper.enabled=false --set replicaCount=1 --set externalZookeeper.servers=zookeeper.vik.svc.cluster.local --set externalAccess.enabled=true --set externalAccess.service.type=LoadBalancer --set externalAccess.autoDiscovery.enabled=true --set rbac.create=true --set autoCreateTopicsEnable=true --set deleteTopicEnable=true -n vik
-  #Kafka can be accessed by consumers via port 9092 on the following DNS name from within your cluster:
+  # Kafka can be accessed by consumers via port 9092 on the following DNS name from within your cluster:
 
    # kafka.vik.svc.cluster.local
 
-  #Each Kafka broker can be accessed by producers via port 9092 on the following DNS name(s) from within your cluster:
+  # Each Kafka broker can be accessed by producers via port 9092 on the following DNS name(s) from within your cluster:
 
    # kafka-0.kafka-headless.vik.svc.cluster.local:9092
    #  Kafka Brokers port: 9094
@@ -396,11 +409,11 @@ kubectl expose service redis-master -n vik --port=6379 --target-port=6379 --name
 # Pull Zipkin image
 docker pull openzipkin/zipkin
 # Create Zipkin deployment in k8s
-kubectl create deployment zipkin --image openzipkin/zipkin -n vik
+kubectl create deployment zipkin --image openzipkin/zipkin -n monitoring
 # Create Zipkin service
-kubectl expose deployment zipkin --type ClusterIP --port 9411 -n vik
+kubectl expose deployment zipkin --type ClusterIP --port 9411 -n monitoring
 # Create Zipkin load balancer
-kubectl expose service zipkin -n vik --port=9411 --target-port=9411 --name=zipkin-external --type=LoadBalancer
+kubectl expose service zipkin -n monitoring --port=9411 --target-port=9411 --name=zipkin-external --type=LoadBalancer
 # http://localhost:9411/zipkin/
 
 ```
@@ -443,7 +456,8 @@ kubectl apply -f .\local-persistent-volume.yaml -n vik
 cd C:\quotes\k8\certs
 kubectl create secret tls internal-ca-key-pair --cert=ca.crt --key=ca.key -n vik
 kubectl apply -f .\issuer.yaml -n vik
-kubectl create configmap trusted-root-ca-cert-config -- from-file=self-signed-ca.crt=ca.crt -n vik
+kubectl create configmap trusted-root-ca-cert-configmap -- from-file=self-signed-ca.crt=ca.crt -n vik
+
 ```
 
 ## Create Secrets
@@ -452,3 +466,9 @@ kubectl create configmap trusted-root-ca-cert-config -- from-file=self-signed-ca
 cd C:\quotes\local-k8\secrets
 .\secrets.ps1
 ```
+## Install Dapr Components
+```powershell
+cd C:\quotes\charts
+helm upgrade --install dapr-infra .\dapr-infra -n vik
+```
+TBT...

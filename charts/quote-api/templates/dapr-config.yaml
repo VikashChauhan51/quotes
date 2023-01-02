@@ -1,0 +1,12 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: {{ .Values.monitoring.daprConfigName }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }}
+spec:
+  tracing:
+    samplingRate: "1"
+    zipkin:
+      endpointAddress: {{ .Values.monitoring.endpointAddress }}
