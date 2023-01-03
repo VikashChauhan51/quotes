@@ -11,11 +11,12 @@
     "DbName": "QuotesDB"
   },
   "Secrets": {
-    "DbCredentialsKey": "User Id=sa;Password=Welcome@123;",
+    "DbCredentialsKey": "db-credentials",
     "Authentication": {
-      "ClientIdKey": "quoteapi",
-      "ClientSecretKey": "apisecret"
-    }
+      "ClientIdKey": "clientId",
+      "ClientSecretKey": "clientSecret"
+    },
+    "AuthenticationKey": "authentication"
   },
   "Authentication": {
     "Authority": "https://localhost:5001/",
@@ -41,11 +42,9 @@
       "AutoReplenishment": false
     }
   },
-  {{- with .Values.appsettings.dapr }}
   "Dapr": {
-    "statestoreName": {{ .statestoreName }},
-    "secretstoreName": {{ .secretstoreName }}
+    "statestoreName": "statestore",
+    "secretstoreName": "secretstore"
 
   }
-  {{ - end }}
 }

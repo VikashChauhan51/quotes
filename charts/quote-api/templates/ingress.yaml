@@ -18,10 +18,12 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "quote-api.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    cert-manager.io/issuer: {{ .Values.issuer.name }}
+    {{- include "quote-api.ingressAnnotations" . | nindent 4 }}
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.ingress.className }}

@@ -463,6 +463,9 @@ kubectl create secret tls internal-ca-key-pair --cert=ca.crt --key=ca.key -n vik
 kubectl apply -f .\issuer.yaml -n vik
 kubectl create configmap trusted-root-ca-cert-configmap -- from-file=self-signed-ca.crt=ca.crt -n vik
 
+# or
+kubectl apply -f .\trusted-root-ca-cert-configmap.yaml -n vik
+
 ```
 
 ## Create Secrets
@@ -501,5 +504,14 @@ dapr run --app-id="quotes-api" --app-port=5000 --dapr-grpc-port=53000 --dapr-htt
 
 # or
 dapr run --app-id="quotes-api" --app-port=5000 --dapr-grpc-port=53000 --dapr-http-port=53001 --components-path="C:\quotes\local-k8\dapr\components" dotnet run
+```
+## Run Quote API in local kubernets
+```powershell
+cd C:\quotes\charts
+helm upgrade --install quote-api .\quote-api -n vik
+```
+### Update host file
+```cmd
+127.0.0.1 quote-api.dev
 ```
 TBT...

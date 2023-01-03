@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: nginx
+  repository: quotesapi
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -98,12 +98,12 @@ appsettings:
   secrets:
     dbCredentialsKey: "db-credentials"
     authentication:
-      clientIdKey: "client-id-Key"
-      clientSecretKey: "client-secret-key"
+      clientIdKey: "clientId"
+      clientSecretKey: "clientSecret"
   authentication:
     authority: "https://localhost:5001/"
   dapr:
     statestoreName: "state-redis"
-    secretstoreName: "secretstore"
+    secretstoreName: "local-k8-secret-store"
 
 

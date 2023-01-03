@@ -7,4 +7,4 @@ metadata:
     {{- include "quote-api.labels" . | nindent 4 }}
 data:
   appsettings.json: |-
-    {{- (tpl (.Files.Get "appsettings.json.tpl") .) | nindent 4}}
+    {{- (tpl (.Files.Get "appsettings.json.tpl") .) | nindent 4 }}

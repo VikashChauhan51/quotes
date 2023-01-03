@@ -14,8 +14,9 @@ spec:
       {{- include "quote-api.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+      {{- include "quote-api.podAnnotations" . | trim | nindent 8 }}
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
@@ -60,17 +61,17 @@ spec:
             - name: tls-cert
               mountPath: /app/cert
               readOnly: true  
-          volumes:
-            - name: {{ template "quote-api.fullname" . }}-volume
-              configMap:
-                name: {{ template "quote-api.fullname" . }}
-            - name: ca-cert
-              configMap:
-                name: {{ template "quote-api.certConfigmap" . }} 
-                defaultMode: 420
-            - name: tls-cert
-              secret:
-                secretName: {{ include "quote-api.fullname" . }}-tls       
+      volumes:
+        - name: {{ template "quote-api.fullname" . }}-volume
+          configMap:
+            name: {{ template "quote-api.fullname" . }}
+        - name: ca-cert
+          configMap:
+            name: {{ template "quote-api.certConfigmap" . }} 
+            defaultMode: 420
+        - name: tls-cert
+          secret:
+            secretName: {{ include "quote-api.fullname" . }}-tls       
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

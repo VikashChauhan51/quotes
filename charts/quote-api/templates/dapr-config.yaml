@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Configuration
 metadata:
-  name: {{ .Values.monitoring.daprConfigName }}
+  name: {{ include "quote-api.fullname" . }}-config
   namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "quote-api.labels" . | nindent 4 }}
