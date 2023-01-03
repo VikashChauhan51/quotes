@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Dapr.Client;
+using FluentValidation;
 using IdentityModel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -141,8 +143,6 @@ internal static class HostingExtensions
         builder.Services.AddMediaTypeHeader();
         builder.Services.AddRateLimiter(options =>
         {
-            //TODO: use secret store
-            var secretStore = builder.Services.BuildServiceProvider().GetService<ISecretStore>();
             var rateLimitConfig = new TokenBucketRateLimiterConfig();
             builder.Configuration.GetSection(ConfigSessions.TokenBucketRateLimiterConfig).Bind(rateLimitConfig);
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -175,12 +175,15 @@ internal static class HostingExtensions
             });
 
         });
-
+        var daprClient = new DaprClientBuilder().Build();
+        var daprConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<DaprConfig>>();
         builder.Services.AddDbContext<QuotesContext>(options =>
         {           
             var sqlConfig = new SqlConfig();
             builder.Configuration.GetSection(ConfigSessions.SqlServerConfig).Bind(sqlConfig);
-            sqlConfig.Credentials = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
+            var keyName = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
+            var secretKeys = daprClient.GetSecretAsync(daprConfig.Value.SecretstoreName, keyName).Result;
+            sqlConfig.Credentials = secretKeys[keyName]; 
             var connectionString = ConnectionStringBuilder.BuildConnectionString(sqlConfig!);
             options.UseSqlServer(connectionString, setupAction =>
             {
@@ -202,8 +205,11 @@ internal static class HostingExtensions
         JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
         var authConfig = new AuthenticationConfig();
         builder.Configuration.GetSection(ConfigSessions.AuthenticationConfig).Bind(authConfig);
-        authConfig.ClientId = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientIdKey)!;
-        authConfig.ClientSecret = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientSecretKey)!;
+        var clientIdKey = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientIdKey)!;
+        var clientSecretKey = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientSecretKey)!;
+        var secretKeys = daprClient.GetSecretAsync(daprConfig.Value.SecretstoreName, (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationKey)!).Result;
+        authConfig.ClientId = secretKeys[clientIdKey];
+        authConfig.ClientSecret = secretKeys[clientSecretKey];
 
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 

@@ -1,0 +1,17 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka-pubsub
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+  - name: brokers 
+    value: "localhost:9094"
+  - name: authRequired
+    value: "false"
+  - name: consumeRetryInterval # Optional.
+    value: 200ms
+  - name: disableTls # Optional. Disable TLS. This is not safe for production!! You should read the `Mutual TLS` section for how to use TLS.
+    value: "true"
+ 

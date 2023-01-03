@@ -430,7 +430,12 @@ kubectl expose pod kafka-ui --type ClusterIP --port 8080 -n vik
 kubectl expose service kafka-ui -n vik --port=8080 --target-port=8080 --name=kafka-ui-external --type=LoadBalancer
 # http://localhost:8080
 ```
-
+## Clone repository into `C:\` drive
+```cmd
+git clone https://github.com/VikashChauhan51/quotes.git
+# verify path
+cd C:\quotes
+```
 ## Generate Self-signed certificate *If Expired*
 ```powershell
 # Execute on PowerShell in admin mode
@@ -470,5 +475,31 @@ cd C:\quotes\local-k8\secrets
 ```powershell
 cd C:\quotes\charts
 helm upgrade --install dapr-infra .\dapr-infra -n vik
+```
+## Run Quote API with local Dapr sidecar
+```powershell
+# Navigate to **Quotes.API** folder path in terminal.
+cd C:\quotes\backend\api\src\Quotes.API
+
+dapr run --app-id="quotes-api" --app-port=5000 --dapr-grpc-port=53000 --dapr-http-port=53001 --components-path="C:\quotes\local-k8\dapr\components"
+
+# Now, run QuotesAPI project with following launch setting:
+"profiles": {
+    "QuotesAPI": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DAPR_GRPC_PORT": "53000",
+        "DAPR_HTTP_PORT": "53001"
+      },
+      "applicationUrl": "https://localhost:7149;http://localhost:5201",
+      "dotnetRunMessages": true
+    }
+# Now, call API with swagger endpoint
+
+# or
+dapr run --app-id="quotes-api" --app-port=5000 --dapr-grpc-port=53000 --dapr-http-port=53001 --components-path="C:\quotes\local-k8\dapr\components" dotnet run
 ```
 TBT...
