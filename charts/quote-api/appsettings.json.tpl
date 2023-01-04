@@ -44,7 +44,7 @@
   },
   "Dapr": {
     "statestoreName": "statestore",
-    "secretstoreName": "secretstore"
+    "secretstoreName": "local-k8-secret-store"
 
   }
 }

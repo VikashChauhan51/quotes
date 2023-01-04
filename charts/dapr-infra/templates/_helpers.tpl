@@ -35,6 +35,8 @@ Common labels
 */}}
 {{- define "dapr-infra.labels" -}}
 helm.sh/chart: {{ include "dapr-infra.chart" . }}
+app.kubernetes.io/component: dapr-infra
+app.kubernetes.io/part-of: dapr
 {{ include "dapr-infra.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}

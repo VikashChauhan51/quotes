@@ -514,4 +514,9 @@ helm upgrade --install quote-api .\quote-api -n vik
 ```cmd
 127.0.0.1 quote-api.dev
 ```
+## Access API with Postman
+```cmd
+# Access following get url with `Accept:application/json` header
+https://quote-api.dev/api/v1/root
+```
 TBT...

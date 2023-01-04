@@ -75,11 +75,13 @@ Create quote-api pod annotations
 */}}
 {{- define "quote-api.podAnnotations" -}}
 dapr.io/enabled: "true"
-dapr.io/app-id: "quote-api"
+dapr.io/app-ssl: "false"
+dapr.io/app-id: "quote-api-app-id"
 dapr.io/app-port: "80"
 dapr.io/config: "quote-api-config"
-dapr.io/sidecar-liveness-probe-delay-seconds: "100"
-dapr.io/sidecar-readiness-probe-delay-seconds: "100"
+dapr.io/log-level: "debug"
+dapr.io/sidecar-liveness-probe-delay-seconds: "5"
+dapr.io/sidecar-readiness-probe-delay-seconds: "3"
 {{- end }}
 
 {{/*
