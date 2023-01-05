@@ -518,5 +518,8 @@ helm upgrade --install quote-api .\quote-api -n vik
 ```cmd
 # Access following get url with `Accept:application/json` header
 https://quote-api.dev/api/v1/root
+
+# or
+https://quote-api.dev/swagger/index.html
 ```
 TBT...

@@ -106,4 +106,8 @@ appsettings:
     statestoreName: "state-redis"
     secretstoreName: "local-k8-secret-store"
 
+  env: 
+    - name: "ASPNETCORE_ENVIRONMENT"
+      value: "Development"
+
 
