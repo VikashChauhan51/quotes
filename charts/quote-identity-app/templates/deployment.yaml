@@ -33,20 +33,31 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: "ASPNETCORE_ENVIRONMENT"
+              value: "Development"
           ports:
             - name: http
               containerPort: 80
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: ca-cert
+              mountPath: /etc/ssl/certs/self-signed-ca.crt
+              subPath: self-signed-ca.crt
+              readOnly: true
+            - name: tls-cert
+              mountPath: /app/cert
+              readOnly: true   
+      volumes:
+        - name: ca-cert
+          configMap:
+            name: {{ template "quote-identity-app.certConfigmap" . }} 
+            defaultMode: 420
+        - name: tls-cert
+          secret:
+            secretName: {{ include "quote-identity-app.fullname" . }}-tls
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

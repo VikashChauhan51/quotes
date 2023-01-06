@@ -60,3 +60,34 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+
+{{/*
+Create ingress annotations
+*/}}
+{{- define "quote-identity-app.ingressAnnotations" -}}
+nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+nginx.ingress.kubernetes.io/affinity: "cookie"
+{{- end }}
+
+{{/*
+Create quote-identity-app pod annotations
+*/}}
+{{- define "quote-identity-app.podAnnotations" -}}
+dapr.io/enabled: "true"
+dapr.io/app-ssl: "false"
+dapr.io/app-id: "quote-identity-app-id"
+dapr.io/app-port: "80"
+dapr.io/config: "quote-identity-config"
+dapr.io/log-level: "debug"
+dapr.io/sidecar-liveness-probe-delay-seconds: "5"
+dapr.io/sidecar-readiness-probe-delay-seconds: "3"
+{{- end }}
+
+{{/*
+Certificate configMap name
+*/}}
+{{- define "quote-identity-app.certConfigmap" -}}
+"trusted-root-ca-cert-configmap"
+{{- end }}

@@ -8,7 +8,7 @@ stateStore:
   redis:
     enable: true
     name: state-redis
-    redisHost: "localhost:6379"
+    redisHost: "redis-master.vik.svc.cluster.local:6379"
     actorStateStore: true
     enableTLS: false
 #TBT

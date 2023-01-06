@@ -509,6 +509,7 @@ dapr run --app-id="quotes-api" --app-port=5000 --dapr-grpc-port=53000 --dapr-htt
 ```powershell
 cd C:\quotes\charts
 helm upgrade --install quote-api .\quote-api -n vik
+helm upgrade --install quote-identity .\quote-identity-app -n vik
 ```
 ### Update host file
 ```cmd
