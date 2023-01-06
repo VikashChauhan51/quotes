@@ -510,17 +510,28 @@ dapr run --app-id="quotes-api" --app-port=5000 --dapr-grpc-port=53000 --dapr-htt
 cd C:\quotes\charts
 helm upgrade --install quote-api .\quote-api -n vik
 helm upgrade --install quote-identity .\quote-identity-app -n vik
+helm upgrade --install quote-app .\quote-app -n vik
 ```
 ### Update host file
 ```cmd
 127.0.0.1 quote-api.dev
+127.0.0.1 quote-identity.dev
+127.0.0.1 quote-app.dev
 ```
-## Access API with Postman
+## Access API and Web Apps
 ```cmd
 # Access following get url with `Accept:application/json` header
 https://quote-api.dev/api/v1/root
 
 # or
 https://quote-api.dev/swagger/index.html
+
+# Access identity server
+https://quote-identity.dev/
+
+# Access quote web app
+https://quote-app.dev/
+
 ```
+
 TBT...

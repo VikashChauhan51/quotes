@@ -6,6 +6,6 @@
     }
   },
   "AllowedHosts": "*",
-  "ApiEndpoint": "https://localhost:7149/",
-  "IdentityEndpoint": "https://localhost:5001/"
+  "ApiEndpoint": "https://quote-api.dev/",
+  "IdentityEndpoint": "https://quote-identity.dev/"
 }

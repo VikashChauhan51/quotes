@@ -48,9 +48,9 @@ public static class Config
                 ClientId = "quoteclient",
                 ClientSecrets = { new Secret("secret".Sha256()) },
                 AllowedGrantTypes = GrantTypes.Code,
-                RedirectUris = { "https://localhost:7131/signin-oidc" },
-                FrontChannelLogoutUri = "https://localhost:7131/signout-oidc",
-                PostLogoutRedirectUris = { "https://localhost:7131/signout-callback-oidc" },
+                RedirectUris = { "https://quote-app.dev/signin-oidc" }, //"https://localhost:7131/signin-oidc" 
+                FrontChannelLogoutUri = "https://quote-app.dev/signout-oidc", //"https://localhost:7131/signout-oidc"
+                PostLogoutRedirectUris = { "https://quote-app.dev/signout-callback-oidc" }, //"https://localhost:7131/signout-callback-oidc"
                 AccessTokenType = AccessTokenType.Reference,
                 UpdateAccessTokenClaimsOnRefresh = true,
                 AllowOfflineAccess = true,

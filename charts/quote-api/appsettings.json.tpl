@@ -19,7 +19,7 @@
     "AuthenticationKey": "authentication"
   },
   "Authentication": {
-    "Authority": "https://localhost:5001/",
+    "Authority": "https://quote-identity.dev/",
     "NameClaimType": "given_name",
     "RoleClaimType": "role",
     "Scopes": [ "quoteapi.fullaccess", "quoteapi.read", "quoteapi.write" ]

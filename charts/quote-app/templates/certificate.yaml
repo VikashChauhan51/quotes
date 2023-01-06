@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "quote-app.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "quote-app.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "quote-app.fullname" . }}-tls
+  dnsNames:
+    - quote-app.dev
+  issuerRef:
+    name: {{ .Values.issuer.name }}
+    kind:  {{ .Values.issuer.kind }}

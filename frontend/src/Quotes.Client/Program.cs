@@ -16,27 +16,29 @@ JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 builder.Services.AddAccessTokenManagement();
 
+var apiEndpoint = builder.Configuration.GetValue<string>("ApiEndpoint");
+var identityEndpoint = builder.Configuration.GetValue<string>("IdentityEndpoint");
 builder.Services.AddHttpClient<IQuoteAuthenticationService, QuoteAuthenticationService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:5001/");
+    client.BaseAddress = new Uri(identityEndpoint);
 });
 builder.Services.AddHttpClient<IRootService, RootService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7149");
+    client.BaseAddress = new Uri(apiEndpoint);
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
 }).AddUserAccessTokenHandler();
 
 builder.Services.AddHttpClient<ISearchService, SearchService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7149");
+    client.BaseAddress = new Uri(apiEndpoint);
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
 }).AddUserAccessTokenHandler();
 
 builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7149");
+    client.BaseAddress = new Uri(apiEndpoint);
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.Json);
     client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
@@ -54,7 +56,7 @@ builder.Services.AddAuthentication(options =>
 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
 {
     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.Authority = "https://localhost:5001/";
+    options.Authority = identityEndpoint;
     options.ClientId = "quoteclient";
     options.ClientSecret = "secret";
     options.ResponseType = "code";
