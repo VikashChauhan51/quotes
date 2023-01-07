@@ -1,0 +1,18 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.stateStore.redis.name }}
+  labels: {{- include "dapr-infra.labels" . | nindent 4 }}-secretstore
+  namespace: {{ .Release.Namespace | quote }}
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+  - name: redisHost
+    value: {{ .Values.stateStore.redis.redisHost }}
+  - name: redisPassword
+    value: {{ .Values.stateStore.redis.password }}
+  - name: enableTLS
+    value: {{ .Values.stateStore.redis.enableTLS }}
+  - name: actorStateStore
+    value: {{ .Values.stateStore.redis.actorStateStore }}

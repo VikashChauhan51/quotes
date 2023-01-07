@@ -9,6 +9,7 @@ stateStore:
     enable: true
     name: state-redis
     redisHost: "redis-master.vik.svc.cluster.local:6379"
+    password: ""
     actorStateStore: true
     enableTLS: false
 #TBT
