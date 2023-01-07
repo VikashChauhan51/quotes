@@ -10,6 +10,14 @@ internal static class HostingExtensions
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
         builder.Services.AddRazorPages();
+        builder.Services.AddCors(opt =>
+        {
+            opt.AddPolicy("authPolicy", builder =>
+            {
+                builder.WithOrigins(new string[] { "https://quote-app.dev/", "https://quote-api.dev/" })
+                .AllowAnyMethod().AllowAnyHeader();
+            });
+        });
 
         var isBuilder = builder.Services.AddIdentityServer(options =>
             {
@@ -56,7 +64,8 @@ internal static class HostingExtensions
         {
             app.UseDeveloperExceptionPage();
         }
-
+        app.Use((context, next) => { context.Request.Scheme = "https"; return next(); });
+        app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
         app.UseIdentityServer();

@@ -337,7 +337,7 @@ helm repo list
 ```powershell
 helm install cert-manager jetstack/cert-manager --namespace vik --version v1.8.2 --set installCRDs=true
 ```
-### Install Ingress controller [Link](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx)
+### Install Ingress controller [Ingress Controller](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx)
 ```powershell
 helm install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx  --set service.loadBalancerIP='127.0.0.1' --set admissionWebhooks.enabled=false --set extraArgs.enable-ssl-passthrough=false
 ```
@@ -518,6 +518,14 @@ helm upgrade --install quote-app .\quote-app -n vik
 127.0.0.1 quote-identity.dev
 127.0.0.1 quote-app.dev
 ```
+## Rewrite DNS name in CoreDNS config [CoreDNS](https://coredns.io/2017/05/08/custom-dns-entries-for-kubernetes/)
+- Add following entry into `coredns` COnfigMap of `Kube-System` namespace. (*below `ready` text*)
+```cmd
+# rewrite name {url} {ingress-controller-service-name}.{ingress-service-namespace-name}.svc.cluster.local
+
+ rewrite name quote-identity.dev ingress-nginx-controller.ingress-nginx.svc.cluster.local
+```
+
 ## Access API and Web Apps
 ```cmd
 # Access following get url with `Accept:application/json` header
