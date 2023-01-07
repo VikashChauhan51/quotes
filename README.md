@@ -122,6 +122,8 @@ Sample HATEOS API with swagger OpenAPI documentation and Identity Server.
 - After installation,restart your system and run the Docker desktop.
 
 - Enable Kubernetes(**Setting->Kubernetes->Enable Kubernetes**).
+  - ![Enable kubernets](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/enable-kubernets.png)
+  - ![Docker with kubernets](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/docker.png)
 
   > Note: After installation, keep docker desktop in running state.
 
@@ -295,10 +297,6 @@ Sample HATEOS API with swagger OpenAPI documentation and Identity Server.
   # Execute on PowerShell in admin mode
    dapr upgrade
   ```
-
-  ## Enable kubernets in docker
-  - ![Enable kubernets](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/enable-kubernets.png)
-  - ![Docker with kubernets](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/docker.png)
 
 ## Dapr initialization in self-hosted mode
 
