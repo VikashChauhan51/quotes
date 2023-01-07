@@ -296,6 +296,10 @@ Sample HATEOS API with swagger OpenAPI documentation and Identity Server.
    dapr upgrade
   ```
 
+  ## Enable kubernets in docker
+  - ![Enable kubernets](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/enable-kubernets.png)
+  - ![Docker with kubernets](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/docker.png)
+
 ## Dapr initialization in self-hosted mode
 
 ```powershell
@@ -525,6 +529,7 @@ helm upgrade --install quote-app .\quote-app -n vik
 
  rewrite name quote-identity.dev ingress-nginx-controller.ingress-nginx.svc.cluster.local
 ```
+- ![CoreDNS](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/coredns.png)
 
 ## Access API and Web Apps
 ```cmd
@@ -541,5 +546,3 @@ https://quote-identity.dev/
 https://quote-app.dev/
 
 ```
-
-TBT...

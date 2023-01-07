@@ -1,5 +1,6 @@
 ﻿using Dapr.Client;
 using FluentValidation;
+using Google.Api;
 using IdentityModel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,7 @@ using Quotes.API.Authorization;
 using Quotes.API.Configurations;
 using Quotes.API.Constants;
 using Quotes.API.DbContexts;
+using Quotes.API.HealthCheck;
 using Quotes.API.Helpers;
 using Quotes.API.Policies;
 using Quotes.API.Services;
@@ -38,6 +40,9 @@ internal static class HostingExtensions
     /// <returns></returns>
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
+
+        builder.Services.AddHealthChecks()
+       .AddCheck<ApiHealthCheck>("ApiHealthCheck");
 
         builder.Services.AddControllers(configure =>
         {
@@ -277,6 +282,9 @@ internal static class HostingExtensions
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
+        app.MapHealthChecks("/health/startup").AllowAnonymous();
+        app.MapHealthChecks("/healthz").AllowAnonymous();
+        app.MapHealthChecks("/ready").AllowAnonymous();
         app.MapControllers().RequireRateLimiting(ApiConstants.UserBasedRateLimitingPolicy);
 
         return app;
