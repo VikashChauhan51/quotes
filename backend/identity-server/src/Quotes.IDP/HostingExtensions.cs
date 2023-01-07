@@ -68,6 +68,7 @@ internal static class HostingExtensions
         app.UseHttpsRedirection();
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseCors("authPolicy");
         app.UseIdentityServer();
         app.UseAuthorization();
         

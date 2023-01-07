@@ -10,7 +10,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddHttpContextAccessor();
 var apiEndpoint = builder.Configuration.GetValue<string>("ApiEndpoint");
 var identityEndpoint = builder.Configuration.GetValue<string>("IdentityEndpoint");
 builder.Services.AddCors(opt =>
@@ -21,38 +20,6 @@ builder.Services.AddCors(opt =>
         .AllowAnyMethod().AllowAnyHeader();
     });
 });
-
-JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-
-builder.Services.AddAccessTokenManagement();
-
-
-builder.Services.AddHttpClient<IQuoteAuthenticationService, QuoteAuthenticationService>(client =>
-{
-    client.BaseAddress = new Uri(identityEndpoint!);
-});
-builder.Services.AddHttpClient<IRootService, RootService>(client =>
-{
-    client.BaseAddress = new Uri(apiEndpoint!);
-    client.DefaultRequestHeaders.Clear();
-    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
-}).AddUserAccessTokenHandler();
-
-builder.Services.AddHttpClient<ISearchService, SearchService>(client =>
-{
-    client.BaseAddress = new Uri(apiEndpoint!);
-    client.DefaultRequestHeaders.Clear();
-    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
-}).AddUserAccessTokenHandler();
-
-builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
-{
-    client.BaseAddress = new Uri(apiEndpoint!);
-    client.DefaultRequestHeaders.Clear();
-    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.Json);
-    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
-}).AddUserAccessTokenHandler();
-
 
 builder.Services.AddAuthentication(options =>
 {
@@ -86,6 +53,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// adds services for token management
+builder.Services.AddOpenIdConnectAccessTokenManagement();
+
 builder.Services.AddAuthorization(authorizationOptions =>
 {
     authorizationOptions.AddPolicy("UserCanAddQuote",
@@ -94,6 +64,34 @@ builder.Services.AddAuthorization(authorizationOptions =>
                 .RequireRole("AddQuote")
                 .Build());
 });
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+builder.Services.AddHttpClient<IQuoteAuthenticationService, QuoteAuthenticationService>(client =>
+{
+    client.BaseAddress = new Uri(identityEndpoint!);
+});
+builder.Services.AddHttpClient<IRootService, RootService>(client =>
+{
+    client.BaseAddress = new Uri(apiEndpoint!);
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
+});//.AddClientAccessTokenHandler(parameters: null);
+
+builder.Services.AddHttpClient<ISearchService, SearchService>(client =>
+{
+    client.BaseAddress = new Uri(apiEndpoint!);
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
+});//.AddClientAccessTokenHandler(parameters: null);
+
+builder.Services.AddHttpClient<IQuoteService, QuoteService>(client =>
+{
+    client.BaseAddress = new Uri(apiEndpoint!);
+    client.DefaultRequestHeaders.Clear();
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.Json);
+    client.DefaultRequestHeaders.Add(HeaderNames.Accept, HeaderKeys.HalJson);
+});//.AddClientAccessTokenHandler(parameters: null);
 
 
 var app = builder.Build();
@@ -105,13 +103,14 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.Use((context, next) => { context.Request.Scheme = "https"; return next(); });
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors("authPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapRazorPages();
 
 app.Run();

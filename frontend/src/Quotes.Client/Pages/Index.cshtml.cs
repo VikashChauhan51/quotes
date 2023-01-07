@@ -18,10 +18,10 @@ public class IndexModel : PageModel
         _searchService= searchService;
     }
 
-    public QuotesCollectionResponse QuotesData { get; set; }
+    public QuotesCollectionResponse QuotesData { get; set; }=new QuotesCollectionResponse();
     public async Task<IActionResult> OnGet()
     {
-        QuotesData = await _searchService.FindAsync(new SearchParameters());
+        //QuotesData = await _searchService.FindAsync(new SearchParameters());
 
         return Page();
     }

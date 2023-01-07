@@ -250,6 +250,15 @@ internal static class HostingExtensions
                 });
         });
 
+        builder.Services.AddCors(opt =>
+        {
+            opt.AddPolicy("authPolicy", builder =>
+            {
+                builder.WithOrigins(new string[] { "https://quote-app.dev/", "https://quote-identity.dev/" })
+                .AllowAnyMethod().AllowAnyHeader();
+            });
+        });
+
         return builder.Build();
     }
     /// <summary>
@@ -279,6 +288,7 @@ internal static class HostingExtensions
         app.UseMediaTypeHeader();
         app.UseAcceptHeader();
         app.UseHttpsRedirection();
+        app.UseCors("authPolicy");
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseRateLimiter();
