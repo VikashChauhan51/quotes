@@ -26,7 +26,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: default
+      serviceAccountName: {{ include "quote-api.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -36,8 +36,10 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: "ASPNETCORE_ENVIRONMENT"
-              value: "Development"
+          {{ range $k, $v := .Values.global.env | default dict }}
+            - name: {{ $k | quote }}
+              value: {{ $v | quote }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort | default .Values.service.port }}

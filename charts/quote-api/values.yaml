@@ -1,6 +1,9 @@
 # Default values for quote-api.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+global:
+  env: 
+    "ASPNETCORE_ENVIRONMENT": "Development"
 
 replicaCount: 1
 
@@ -20,12 +23,12 @@ issuer:
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: true
+  create: false
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "default"
 
 podAnnotations: {}
 
@@ -93,21 +96,20 @@ monitoring:
 # appsettings
 appsettings:
   sqlServer: 
-    serverName: "localhost"
+    serverName: "sqlserver-mssql-latest.demo.svc.cluster.local"
     dbName: "QuotesDB"
   secrets:
     dbCredentialsKey: "db-credentials"
     authentication:
       clientIdKey: "clientId"
       clientSecretKey: "clientSecret"
+    AuthenticationKey: "authentication"
   authentication:
-    authority: "https://localhost:5001/"
+    authority: "https://quote-identity.dev/"
   dapr:
     statestoreName: "state-redis"
     secretstoreName: "local-k8-secret-store"
 
-  env: 
-    - name: "ASPNETCORE_ENVIRONMENT"
-      value: "Development"
+
 
 

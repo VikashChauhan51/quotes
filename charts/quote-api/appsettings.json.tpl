@@ -7,19 +7,19 @@
   },
   "AllowedHosts": "*",
   "Sqlserver": {
-    "ServerName": "sqlserver-mssql-latest.demo.svc.cluster.local", 
-    "DbName": "QuotesDB"
+    "ServerName": {{ .Values.appsettings.sqlServer.serverName | quote }}, 
+    "DbName": {{ .Values.appsettings.sqlServer.dbName | quote }}
   },
   "Secrets": {
-    "DbCredentialsKey": "db-credentials",
+    "DbCredentialsKey": {{ .Values.appsettings.secrets.dbCredentialsKey | quote }},
     "Authentication": {
-      "ClientIdKey": "clientId",
-      "ClientSecretKey": "clientSecret"
+      "ClientIdKey": {{ .Values.appsettings.secrets.authentication.clientIdKey | quote }},
+      "ClientSecretKey": {{ .Values.appsettings.secrets.authentication.clientSecretKey | quote }}
     },
-    "AuthenticationKey": "authentication"
+    "AuthenticationKey": {{ .Values.appsettings.secrets.AuthenticationKey | quote }}
   },
   "Authentication": {
-    "Authority": "https://quote-identity.dev/",
+    "Authority": {{ .Values.appsettings.authentication.authority | quote }},
     "NameClaimType": "given_name",
     "RoleClaimType": "role",
     "Scopes": [ "quoteapi.fullaccess", "quoteapi.read", "quoteapi.write" ]
@@ -43,8 +43,7 @@
     }
   },
   "Dapr": {
-    "statestoreName": "statestore",
-    "secretstoreName": "local-k8-secret-store"
-
+    "statestoreName": {{ .Values.appsettings.dapr.statestoreName | quote }},
+    "secretstoreName": {{ .Values.appsettings.dapr.secretstoreName | quote }}
   }
 }
