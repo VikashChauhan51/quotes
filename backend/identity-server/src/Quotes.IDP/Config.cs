@@ -5,6 +5,7 @@ namespace Quotes.IDP;
 
 public static class Config
 {
+    public static string ClientBaseUrl { get; set; } = "https://quote-app.dev/"; //https://localhost:7131/
     public static IEnumerable<IdentityResource> IdentityResources =>
         new IdentityResource[]
         {
@@ -48,9 +49,9 @@ public static class Config
                 ClientId = "quoteclient",
                 ClientSecrets = { new Secret("secret".Sha256()) },
                 AllowedGrantTypes = GrantTypes.Code,
-                RedirectUris = { "https://quote-app.dev/signin-oidc" }, //"https://localhost:7131/signin-oidc" 
-                FrontChannelLogoutUri = "https://quote-app.dev/signout-oidc", //"https://localhost:7131/signout-oidc"
-                PostLogoutRedirectUris = { "https://quote-app.dev/signout-callback-oidc" }, //"https://localhost:7131/signout-callback-oidc"
+                RedirectUris = { $"{ClientBaseUrl}signin-oidc" },
+                FrontChannelLogoutUri = $"{ClientBaseUrl}signout-oidc",
+                PostLogoutRedirectUris = { $"{ClientBaseUrl}signout-callback-oidc" },
                 AccessTokenType = AccessTokenType.Reference,
                 UpdateAccessTokenClaimsOnRefresh = true,
                 AllowOfflineAccess = true,

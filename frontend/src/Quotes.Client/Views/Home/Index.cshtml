@@ -1,0 +1,21 @@
+﻿@model Quotes.Client.Models.QuotesCollectionResponse
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container">
+    <div class="row">
+        @foreach (var item in Model.Items ?? new List<LinkedResourceItem<Quote>>())
+        {
+            <div class="pull-left col-md-4">
+                <div>
+                    <div class="shadow-lg p-3 mb-5 bg-white rounded">@item.Data.Message</div>
+                    <div class="bottomMarginDefault">
+                        @* <a asp-action="EditImage" asp-controller="Gallery" asp-route-id="@item.Id">Edit title</a> |
+                    <a asp-action="DeleteImage" asp-controller="Gallery" asp-route-id="@item.Id">Delete image</a>*@
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div> 

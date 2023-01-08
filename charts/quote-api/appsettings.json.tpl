@@ -7,7 +7,7 @@
   },
   "AllowedHosts": "*",
   "Sqlserver": {
-    "ServerName": "localhost",
+    "ServerName": "sqlserver-mssql-latest.demo.svc.cluster.local", 
     "DbName": "QuotesDB"
   },
   "Secrets": {

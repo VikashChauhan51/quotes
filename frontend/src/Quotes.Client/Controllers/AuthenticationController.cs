@@ -1,28 +1,24 @@
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Quotes.Client.Services;
- 
 
-namespace Quotes.Client.Pages.Authentication;
+namespace Quotes.Client.Controllers;
 
-
-[Authorize]
-public class LogoutModel : PageModel
+public class AuthenticationController : Controller
 {
     private readonly IQuoteAuthenticationService _authenticationService;
-    public LogoutModel(IQuoteAuthenticationService authenticationService)
+    public AuthenticationController(IQuoteAuthenticationService authenticationService)
     {
         _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
     }
-    public async Task<IActionResult> OnGet()
+
+    [Authorize]
+    public async Task Logout()
     {
-       
-        var discoveryDocumentResponse= await _authenticationService.GetDiscoveryDocumentAsync();
+        var discoveryDocumentResponse = await _authenticationService.GetDiscoveryDocumentAsync();
 
         if (discoveryDocumentResponse.IsError)
         {
@@ -65,7 +61,9 @@ public class LogoutModel : PageModel
         // "OpenIdConnectDefaults.AuthenticationScheme" (oidc)
         // so it can clear its own session/cookie
         await this.HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
-
-        return Page();
+    }
+    public IActionResult AccessDenied()
+    {
+        return View();
     }
 }

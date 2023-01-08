@@ -1,0 +1,20 @@
+﻿@model Quotes.Client.Models.QuoteForCreation
+
+<h2 class="leftMarginSmaller">Add Quote</h2>
+
+<form asp-action="AddQuote" method="post" class="form-horizontal" role="form" enctype="multipart/form-data">
+
+    <div class="form-horizontal leftMarginDefault">
+
+        <div class="form-group">
+            <div>You quote's message</div>
+            <textarea asp-for="Message" class="form-control" rows="5" cols="40" data-val="true"></textarea>
+        </div>
+        <br/>
+        <div class="form-group">
+            <div>
+                <input type="submit" class="btn btn-primary" value="Add Quote" />
+            </div>
+        </div>
+    </div>
+</form>

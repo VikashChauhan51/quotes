@@ -521,11 +521,12 @@ helm upgrade --install quote-app .\quote-app -n vik
 127.0.0.1 quote-app.dev
 ```
 ## Rewrite DNS name in CoreDNS config [CoreDNS](https://coredns.io/2017/05/08/custom-dns-entries-for-kubernetes/)
-- Add following entry into `coredns` COnfigMap of `Kube-System` namespace. (*below `ready` text*)
+- Add following entries into `coredns` COnfigMap of `Kube-System` namespace. (*below `ready` text*)
 ```cmd
 # rewrite name {url} {ingress-controller-service-name}.{ingress-service-namespace-name}.svc.cluster.local
 
  rewrite name quote-identity.dev ingress-nginx-controller.ingress-nginx.svc.cluster.local
+ rewrite name quote-api.dev ingress-nginx-controller.ingress-nginx.svc.cluster.local
 ```
 - ![CoreDNS](https://github.com/VikashChauhan51/quotes/blob/master/local-k8/imgs/coredns.png)
 
