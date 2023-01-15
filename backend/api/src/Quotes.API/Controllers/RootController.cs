@@ -8,6 +8,7 @@ namespace Quotes.API.Controllers
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/root")]
     //[Authorize]
+    [ResponseCache(CacheProfileName = "Default5min")]
     public class RootController : ControllerBase
     {
 

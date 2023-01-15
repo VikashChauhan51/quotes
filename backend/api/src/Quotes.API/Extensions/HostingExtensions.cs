@@ -42,75 +42,7 @@ internal static class HostingExtensions
     /// <returns></returns>
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
-
-        builder.Services.AddHealthChecks()
-       .AddCheck<ApiHealthCheck>("ApiHealthCheck");
-
-        var redisOptions = ConfigurationOptions.Parse(builder.Configuration.GetConnectionString("Redis")!);
-        var connectionMultiplexer = ConnectionMultiplexer.Connect(redisOptions);
-        builder.Services.AddSingleton<IConnectionMultiplexer>(sp => connectionMultiplexer);
-
-
-        builder.Services.AddStackExchangeRedisCache(options =>
-        {
-            options.Configuration = builder.Configuration.GetConnectionString("Redis");
-            options.InstanceName = "QuotesAPI";
-        });
-
-        builder.Services.AddControllers(configure =>
-        {
-            configure.ReturnHttpNotAcceptable = true;
-            configure.OutputFormatters.RemoveType<StringOutputFormatter>();
-            configure.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
-
-            configure.Filters.Add(
-                new ProducesResponseTypeAttribute(
-                    StatusCodes.Status406NotAcceptable));
-            configure.Filters.Add(
-                new ProducesResponseTypeAttribute(
-                    StatusCodes.Status415UnsupportedMediaType));
-            configure.Filters.Add(
-                 new ProducesResponseTypeAttribute(
-           StatusCodes.Status400BadRequest));
-            configure.Filters.Add(
-                new ProducesResponseTypeAttribute(
-           StatusCodes.Status401Unauthorized));
-            configure.Filters.Add(
-                new ProducesResponseTypeAttribute(
-           StatusCodes.Status403Forbidden));
-            configure.Filters.Add(
-                new ProducesResponseTypeAttribute(
-                    StatusCodes.Status429TooManyRequests));
-            configure.Filters.Add(
-                new ProducesResponseTypeAttribute(
-                    StatusCodes.Status500InternalServerError));
-            configure.Filters.Add(new ProducesDefaultResponseTypeAttribute());
-            configure.Filters.Add(
-              new ConsumesAttribute(HeaderKeys.Json));
-            configure.Filters.Add(
-             new ProducesAttribute(HeaderKeys.Json, HeaderKeys.HalJson));
-
-        }).ConfigureApiBehaviorOptions(options =>
-        {
-            options.InvalidModelStateResponseFactory = context =>
-                new BadRequestObjectResult(context.ModelState)
-                {
-                    ContentTypes =
-                    {
-                        HeaderKeys.Json
-                    }
-                };
-        }).AddNewtonsoftJson(setupAction =>
-        {
-            setupAction.SerializerSettings.Formatting = Formatting.Indented;
-
-            setupAction.SerializerSettings.DateParseHandling = DateParseHandling.DateTimeOffset;
-            setupAction.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
-            setupAction.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
-            setupAction.SerializerSettings.ContractResolver =
-                new CamelCasePropertyNamesContractResolver();
-            setupAction.SerializerSettings.Converters.Add(new StringEnumConverter());
-        }).AddDapr();
+        // Add configurations
 
         builder.Services.Configure<DaprConfig>(options =>
         {
@@ -163,11 +95,103 @@ internal static class HostingExtensions
             var concurrencyRateLimitConfig = new ConcurrencyLimiterConfig();
             builder.Configuration.GetSection(ConfigSessions.ConcurrencyRateLimiterConfig).Bind(concurrencyRateLimitConfig);
             config.PermitLimit = concurrencyRateLimitConfig.PermitLimit;
-            config.QueueLimit=concurrencyRateLimitConfig.QueueLimit;
-            config.QueueProcessingOrder=concurrencyRateLimitConfig.QueueProcessingOrder;    
+            config.QueueLimit = concurrencyRateLimitConfig.QueueLimit;
+            config.QueueProcessingOrder = concurrencyRateLimitConfig.QueueProcessingOrder;
+
+        });
+        builder.Services.Configure<SqlConfig>(config =>
+        {
+            var sqlConfig = new SqlConfig();
+            builder.Configuration.GetSection(ConfigSessions.SqlServerConfig).Bind(sqlConfig);
+            var keyName = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
+            var daprConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<DaprConfig>>();
+            var daprClient = new DaprClientBuilder().Build();
+            var secretKeys = daprClient.GetSecretAsync(daprConfig.Value.SecretstoreName, keyName).Result;
+            sqlConfig.Credentials = secretKeys[keyName];
+            config.Credentials = sqlConfig.Credentials;
+            config.ServerName = sqlConfig.ServerName;
+            config.DbName = sqlConfig.DbName;
 
         });
 
+
+        var redisOptions = ConfigurationOptions.Parse(builder.Configuration.GetConnectionString("Redis")!);
+        builder.Services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisOptions));
+       
+        var sqlConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<SqlConfig>>();
+        var connectionString = ConnectionStringBuilder.BuildConnectionString(sqlConfig!.Value!);
+
+        builder.Services.AddHealthChecks()
+                .AddCheck<ApiHealthCheck>("ApiHealthCheck")
+                .AddSqlServer(connectionString)
+                .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
+
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = builder.Configuration.GetConnectionString("Redis");
+            options.InstanceName = "QuotesAPI";
+        });
+        builder.Services.AddResponseCaching();
+
+        builder.Services.AddControllers(configure =>
+        {
+            configure.ReturnHttpNotAcceptable = true;
+            configure.OutputFormatters.RemoveType<StringOutputFormatter>();
+            configure.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
+
+            configure.Filters.Add(
+                new ProducesResponseTypeAttribute(
+                    StatusCodes.Status406NotAcceptable));
+            configure.Filters.Add(
+                new ProducesResponseTypeAttribute(
+                    StatusCodes.Status415UnsupportedMediaType));
+            configure.Filters.Add(
+                 new ProducesResponseTypeAttribute(
+           StatusCodes.Status400BadRequest));
+            configure.Filters.Add(
+                new ProducesResponseTypeAttribute(
+           StatusCodes.Status401Unauthorized));
+            configure.Filters.Add(
+                new ProducesResponseTypeAttribute(
+           StatusCodes.Status403Forbidden));
+            configure.Filters.Add(
+                new ProducesResponseTypeAttribute(
+                    StatusCodes.Status429TooManyRequests));
+            configure.Filters.Add(
+                new ProducesResponseTypeAttribute(
+                    StatusCodes.Status500InternalServerError));
+            configure.Filters.Add(new ProducesDefaultResponseTypeAttribute());
+            configure.Filters.Add(
+              new ConsumesAttribute(HeaderKeys.Json));
+            configure.Filters.Add(
+             new ProducesAttribute(HeaderKeys.Json, HeaderKeys.HalJson));
+
+            configure.CacheProfiles.Add("Default5min", new CacheProfile()
+            {
+                Duration = 300
+            });
+
+        }).ConfigureApiBehaviorOptions(options =>
+        {
+            options.InvalidModelStateResponseFactory = context =>
+                new BadRequestObjectResult(context.ModelState)
+                {
+                    ContentTypes =
+                    {
+                        HeaderKeys.Json
+                    }
+                };
+        }).AddNewtonsoftJson(setupAction =>
+        {
+            setupAction.SerializerSettings.Formatting = Formatting.Indented;
+
+            setupAction.SerializerSettings.DateParseHandling = DateParseHandling.DateTimeOffset;
+            setupAction.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+            setupAction.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+            setupAction.SerializerSettings.ContractResolver =
+                new CamelCasePropertyNamesContractResolver();
+            setupAction.SerializerSettings.Converters.Add(new StringEnumConverter());
+        }).AddDapr();
 
         builder.Services.AddApiVersioning(setupAction =>
         {
@@ -202,16 +226,8 @@ internal static class HostingExtensions
             options.AddPolicy<string, ConcurrencyRateLimitingPolicy>(ApiConstants.DefaultRateLimitingPolicy);
 
         });
-        var daprClient = new DaprClientBuilder().Build();
-        var daprConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<DaprConfig>>();
         builder.Services.AddDbContext<QuotesContext>(options =>
         {
-            var sqlConfig = new SqlConfig();
-            builder.Configuration.GetSection(ConfigSessions.SqlServerConfig).Bind(sqlConfig);
-            var keyName = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
-            var secretKeys = daprClient.GetSecretAsync(daprConfig.Value.SecretstoreName, keyName).Result;
-            sqlConfig.Credentials = secretKeys[keyName];
-            var connectionString = ConnectionStringBuilder.BuildConnectionString(sqlConfig!);
             options.UseSqlServer(connectionString, setupAction =>
             {
                 setupAction.EnableRetryOnFailure(3);
@@ -234,6 +250,8 @@ internal static class HostingExtensions
         builder.Configuration.GetSection(ConfigSessions.AuthenticationConfig).Bind(authConfig);
         var clientIdKey = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientIdKey)!;
         var clientSecretKey = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationClientSecretKey)!;
+        var daprConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<DaprConfig>>();
+        var daprClient = new DaprClientBuilder().Build();
         var secretKeys = daprClient.GetSecretAsync(daprConfig.Value.SecretstoreName, (string)builder.Configuration.GetValue(typeof(string), SecretKeys.AuthenticationKey)!).Result;
         authConfig.ClientId = secretKeys[clientIdKey];
         authConfig.ClientSecret = secretKeys[clientSecretKey];
@@ -290,7 +308,7 @@ internal static class HostingExtensions
     /// <returns></returns>
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
-        app.UseRateLimiter();
+        app.UseSerilogRequestLogging();
 
         if (app.Environment.IsDevelopment())
         {
@@ -314,6 +332,8 @@ internal static class HostingExtensions
         app.UseCors("authPolicy");
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseRateLimiter();
+        app.UseResponseCaching();
         app.MapHealthChecks("/health/startup").AllowAnonymous();
         app.MapHealthChecks("/healthz").AllowAnonymous();
         app.MapHealthChecks("/ready").AllowAnonymous();
