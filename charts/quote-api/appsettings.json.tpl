@@ -45,5 +45,8 @@
   "Dapr": {
     "statestoreName": {{ .Values.appsettings.dapr.statestoreName | quote }},
     "secretstoreName": {{ .Values.appsettings.dapr.secretstoreName | quote }}
+  },
+  "ConnectionStrings": {
+    "Redis": "redis-master.vik.svc.cluster.local:6379"
   }
 }

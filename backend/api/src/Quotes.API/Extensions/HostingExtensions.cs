@@ -21,7 +21,9 @@ using Quotes.API.HealthCheck;
 using Quotes.API.Helpers;
 using Quotes.API.Policies;
 using Quotes.API.Services;
+using RedisRateLimiting;
 using Serilog;
+using StackExchange.Redis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
@@ -43,6 +45,17 @@ internal static class HostingExtensions
 
         builder.Services.AddHealthChecks()
        .AddCheck<ApiHealthCheck>("ApiHealthCheck");
+
+        var redisOptions = ConfigurationOptions.Parse(builder.Configuration.GetConnectionString("Redis")!);
+        var connectionMultiplexer = ConnectionMultiplexer.Connect(redisOptions);
+        builder.Services.AddSingleton<IConnectionMultiplexer>(sp => connectionMultiplexer);
+
+
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = builder.Configuration.GetConnectionString("Redis");
+            options.InstanceName = "QuotesAPI";
+        });
 
         builder.Services.AddControllers(configure =>
         {
@@ -132,6 +145,30 @@ internal static class HostingExtensions
 
         });
 
+        builder.Services.Configure<TokenBucketRateLimiterConfig>(config =>
+        {
+            var rateLimitConfig = new TokenBucketRateLimiterConfig();
+            builder.Configuration.GetSection(ConfigSessions.TokenBucketRateLimiterConfig).Bind(rateLimitConfig);
+            config.QueueLimit = rateLimitConfig.QueueLimit;
+            config.AutoReplenishment = rateLimitConfig.AutoReplenishment;
+            config.QueueProcessingOrder = rateLimitConfig.QueueProcessingOrder;
+            config.TokensPerPeriod = rateLimitConfig.TokensPerPeriod;
+            config.TokenLimit = rateLimitConfig.TokenLimit;
+            config.ReplenishmentPeriodSeconds = rateLimitConfig.ReplenishmentPeriodSeconds;
+
+        });
+
+        builder.Services.Configure<ConcurrencyLimiterConfig>(config =>
+        {
+            var concurrencyRateLimitConfig = new ConcurrencyLimiterConfig();
+            builder.Configuration.GetSection(ConfigSessions.ConcurrencyRateLimiterConfig).Bind(concurrencyRateLimitConfig);
+            config.PermitLimit = concurrencyRateLimitConfig.PermitLimit;
+            config.QueueLimit=concurrencyRateLimitConfig.QueueLimit;
+            config.QueueProcessingOrder=concurrencyRateLimitConfig.QueueProcessingOrder;    
+
+        });
+
+
         builder.Services.AddApiVersioning(setupAction =>
         {
             setupAction.AssumeDefaultVersionWhenUnspecified = true;
@@ -148,10 +185,8 @@ internal static class HostingExtensions
         builder.Services.AddMediaTypeHeader();
         builder.Services.AddRateLimiter(options =>
         {
-            var rateLimitConfig = new TokenBucketRateLimiterConfig();
-            builder.Configuration.GetSection(ConfigSessions.TokenBucketRateLimiterConfig).Bind(rateLimitConfig);
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = (context, cancellationToken) =>
             {
 
@@ -163,32 +198,19 @@ internal static class HostingExtensions
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                 return new ValueTask();
             };
-
-            options.AddPolicy(ApiConstants.UserBasedRateLimitingPolicy, new UserBasedRateLimitingPolicy(rateLimitConfig));
-
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-            {
-                var concurrencyRateLimitConfig = new ConcurrencyLimiterConfig();
-                builder.Configuration.GetSection(ConfigSessions.ConcurrencyRateLimiterConfig).Bind(concurrencyRateLimitConfig);
-                var host = context.Request.Headers.Host.ToString();
-                return RateLimitPartition.GetConcurrencyLimiter(host, _ => new ConcurrencyLimiterOptions
-                {
-                    PermitLimit = concurrencyRateLimitConfig.PermitLimit,
-                    QueueProcessingOrder = (QueueProcessingOrder)concurrencyRateLimitConfig.QueueProcessingOrder,
-                    QueueLimit = concurrencyRateLimitConfig.QueueLimit
-                });
-            });
+            options.AddPolicy<string, UserBasedRateLimitingPolicy>(ApiConstants.UserBasedRateLimitingPolicy);
+            options.AddPolicy<string, ConcurrencyRateLimitingPolicy>(ApiConstants.DefaultRateLimitingPolicy);
 
         });
         var daprClient = new DaprClientBuilder().Build();
         var daprConfig = builder.Services.BuildServiceProvider().GetRequiredService<IOptions<DaprConfig>>();
         builder.Services.AddDbContext<QuotesContext>(options =>
-        {           
+        {
             var sqlConfig = new SqlConfig();
             builder.Configuration.GetSection(ConfigSessions.SqlServerConfig).Bind(sqlConfig);
             var keyName = (string)builder.Configuration.GetValue(typeof(string), SecretKeys.DbCredentialsKey)!;
             var secretKeys = daprClient.GetSecretAsync(daprConfig.Value.SecretstoreName, keyName).Result;
-            sqlConfig.Credentials = secretKeys[keyName]; 
+            sqlConfig.Credentials = secretKeys[keyName];
             var connectionString = ConnectionStringBuilder.BuildConnectionString(sqlConfig!);
             options.UseSqlServer(connectionString, setupAction =>
             {
@@ -268,6 +290,7 @@ internal static class HostingExtensions
     /// <returns></returns>
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
+        app.UseRateLimiter();
 
         if (app.Environment.IsDevelopment())
         {
@@ -291,7 +314,6 @@ internal static class HostingExtensions
         app.UseCors("authPolicy");
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseRateLimiter();
         app.MapHealthChecks("/health/startup").AllowAnonymous();
         app.MapHealthChecks("/healthz").AllowAnonymous();
         app.MapHealthChecks("/ready").AllowAnonymous();

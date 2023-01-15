@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.RateLimiting;
+﻿using Google.Protobuf.WellKnownTypes;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using Quotes.API.Configurations;
+using RedisRateLimiting;
+using StackExchange.Redis;
 using System.Globalization;
 using System.Threading.RateLimiting;
 
@@ -8,9 +12,12 @@ namespace Quotes.API.Policies
     public class ConcurrencyRateLimitingPolicy : IRateLimiterPolicy<string>
     {
         private readonly ConcurrencyLimiterConfig _concurrencyLimiterConfig;
-        public ConcurrencyRateLimitingPolicy(ConcurrencyLimiterConfig concurrencyLimiterConfig)
+        private readonly IConnectionMultiplexer _connectionMultiplexer;
+        public ConcurrencyRateLimitingPolicy(IConnectionMultiplexer connectionMultiplexer,
+            IOptions<ConcurrencyLimiterConfig> concurrencyLimiterConfig)
         {
-            _concurrencyLimiterConfig = concurrencyLimiterConfig ?? throw new ArgumentNullException(nameof(concurrencyLimiterConfig));
+            _concurrencyLimiterConfig = concurrencyLimiterConfig?.Value ?? throw new ArgumentNullException(nameof(concurrencyLimiterConfig));
+            _connectionMultiplexer = connectionMultiplexer ?? throw new ArgumentException(nameof(connectionMultiplexer));
         }
         public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected { get; } =
         (context, _) =>
@@ -31,11 +38,11 @@ namespace Quotes.API.Policies
             var host = httpContext.Request.Headers.Host.ToString();
 
             // one request at given moment of time per host
-            return RateLimitPartition.GetConcurrencyLimiter(host, _ => new ConcurrencyLimiterOptions
+            return RedisRateLimitPartition.GetConcurrencyRateLimiter(host, _ => new RedisConcurrencyRateLimiterOptions
             {
                 PermitLimit = _concurrencyLimiterConfig.PermitLimit,
-                QueueProcessingOrder = (QueueProcessingOrder)_concurrencyLimiterConfig.QueueProcessingOrder,
-                QueueLimit = _concurrencyLimiterConfig.QueueLimit
+                QueueLimit = _concurrencyLimiterConfig.QueueLimit,
+                ConnectionMultiplexerFactory = () => _connectionMultiplexer
             });
         }
     }

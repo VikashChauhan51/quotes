@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.RateLimiting;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using Quotes.API.Configurations;
+using RedisRateLimiting;
+using StackExchange.Redis;
 using System.Globalization;
 using System.Threading.RateLimiting;
 
@@ -8,9 +12,12 @@ namespace Quotes.API.Policies;
 public class UserBasedRateLimitingPolicy : IRateLimiterPolicy<string>
 {
     private readonly TokenBucketRateLimiterConfig _tokenBucketRateLimiterConfig;
-    public UserBasedRateLimitingPolicy(TokenBucketRateLimiterConfig tokenBucketRateLimiterConfig)
+    private readonly IConnectionMultiplexer _connectionMultiplexer;
+    public UserBasedRateLimitingPolicy(IConnectionMultiplexer connectionMultiplexer,
+        IOptions<TokenBucketRateLimiterConfig> tokenBucketRateLimiterConfig)
     {
-        _tokenBucketRateLimiterConfig = tokenBucketRateLimiterConfig ?? throw new ArgumentException(nameof(tokenBucketRateLimiterConfig));
+        _tokenBucketRateLimiterConfig = tokenBucketRateLimiterConfig?.Value ?? throw new ArgumentException(nameof(tokenBucketRateLimiterConfig));
+        _connectionMultiplexer = connectionMultiplexer ?? throw new ArgumentException(nameof(connectionMultiplexer));
     }
 
     public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected { get; } =
@@ -30,15 +37,13 @@ public class UserBasedRateLimitingPolicy : IRateLimiterPolicy<string>
     public RateLimitPartition<string> GetPartition(HttpContext httpContext)
     {
         var ownerId = httpContext.GetOwnerId() ?? httpContext.Request.Headers.Host.ToString();
-        return RateLimitPartition.GetTokenBucketLimiter(ownerId, _ =>
-        new TokenBucketRateLimiterOptions
+        return RedisRateLimitPartition.GetTokenBucketRateLimiter(ownerId, _ =>
+        new RedisTokenBucketRateLimiterOptions
         {
             TokenLimit = _tokenBucketRateLimiterConfig.TokenLimit,
-            QueueProcessingOrder = (QueueProcessingOrder)_tokenBucketRateLimiterConfig.QueueProcessingOrder,
-            QueueLimit = _tokenBucketRateLimiterConfig.QueueLimit,
+            ConnectionMultiplexerFactory = () => _connectionMultiplexer,
             ReplenishmentPeriod = TimeSpan.FromSeconds(_tokenBucketRateLimiterConfig.ReplenishmentPeriodSeconds),
-            TokensPerPeriod = _tokenBucketRateLimiterConfig.TokensPerPeriod,
-            AutoReplenishment = _tokenBucketRateLimiterConfig.AutoReplenishment
+            TokensPerPeriod = _tokenBucketRateLimiterConfig.TokensPerPeriod
         });
     }
 }
