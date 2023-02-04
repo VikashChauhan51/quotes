@@ -1,18 +1,20 @@
 import { NgModule } from '@angular/core';
-import { AuthModule } from 'angular-auth-oidc-client';
+import { AuthModule, LogLevel  } from 'angular-auth-oidc-client';
 
 
 @NgModule({
     imports: [AuthModule.forRoot({
         config: {
             authority: 'https://localhost:5001',
-            redirectUrl: window.location.origin,
-            postLogoutRedirectUri: window.location.origin,
+            redirectUrl: `https://localhost:4200/signin-callback`,
+            postLogoutRedirectUri: `https://localhost:4200/signout-callback`,
             clientId: 'please-enter-clientId',
-            scope: 'please-enter-scopes', // 'openid profile ' + your scopes
+            scope: 'openid profile email offline_access', // 'openid profile ' + your scopes
             responseType: 'code',
             silentRenew: false,
-            renewTimeBeforeTokenExpiresInSeconds: 10,
+            useRefreshToken: true,
+           logLevel: LogLevel.Debug,
+
         }
       })],
     exports: [AuthModule],
