@@ -1,33 +1,10 @@
-import { Component,OnInit } from '@angular/core';
-import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.sass']
+  styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'quotes-app';
-  isAuthenticated: boolean=false;
-  userData:any;
-
-  constructor(public oidcSecurityService: OidcSecurityService) {}
-
-  ngOnInit() {
-    this.oidcSecurityService.checkAuth().subscribe(({ isAuthenticated, userData}) => {
-      this.isAuthenticated=isAuthenticated;
-      if(isAuthenticated===false){
-        this.login();
-      }
-      this.userData=userData;
-    });
-  }
-
-  login() {
-    this.oidcSecurityService.authorize();
-  }
-
-  logout() {
-    this.oidcSecurityService.logoff().subscribe((result) => console.log(result));
-  }
 }

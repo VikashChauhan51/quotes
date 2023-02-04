@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { AuthModule,LogLevel } from 'angular-auth-oidc-client';
+import { AuthModule } from 'angular-auth-oidc-client';
 
 
 @NgModule({
@@ -8,13 +8,11 @@ import { AuthModule,LogLevel } from 'angular-auth-oidc-client';
             authority: 'https://localhost:5001',
             redirectUrl: window.location.origin,
             postLogoutRedirectUri: window.location.origin,
-            clientId: 'quoteclient',
-            scope: 'openid profile email roles offline_access', 
+            clientId: 'please-enter-clientId',
+            scope: 'please-enter-scopes', // 'openid profile ' + your scopes
             responseType: 'code',
-            silentRenew: true,
-            useRefreshToken: true,
+            silentRenew: false,
             renewTimeBeforeTokenExpiresInSeconds: 10,
-            logLevel: LogLevel.Debug,
         }
       })],
     exports: [AuthModule],
